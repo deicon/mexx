@@ -99,6 +99,7 @@ describe('App accessibility smoke', () => {
     render(<App />);
     await screen.findByRole('heading', { name: 'Mexx' });
 
+    await user.click(screen.getByRole('button', { name: /Menue oeffnen/i }));
     await user.click(screen.getByRole('button', { name: 'Daten' }));
 
     await screen.findByRole('heading', { name: 'Sichern und Uebertragen' });

@@ -47,6 +47,39 @@ describe('DashboardScreen', () => {
     expect(onOpenDay).toHaveBeenCalledWith('2026-06-05');
   });
 
+  it('exposes maintenance actions behind the header menu', async () => {
+    const user = userEvent.setup();
+    const onOpenPhases = vi.fn();
+    const onOpenKnownTerms = vi.fn();
+    const onOpenExports = vi.fn();
+
+    render(
+      <DashboardScreen
+        dayStates={dayStates}
+        today="2026-06-03"
+        backupStatusLabel="Backup offen"
+        onOpenPhases={onOpenPhases}
+        onOpenKnownTerms={onOpenKnownTerms}
+        onOpenExports={onOpenExports}
+      />
+    );
+
+    expect(screen.queryByRole('button', { name: 'Phasen' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /Menue oeffnen/i }));
+
+    await user.click(screen.getByRole('button', { name: 'Phasen' }));
+    expect(onOpenPhases).toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: /Menue oeffnen/i }));
+    await user.click(screen.getByRole('button', { name: 'Begriffe' }));
+    expect(onOpenKnownTerms).toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: /Menue oeffnen/i }));
+    await user.click(screen.getByRole('button', { name: 'Daten' }));
+    expect(onOpenExports).toHaveBeenCalled();
+  });
+
   it('lets the user page through months via the calendar header', async () => {
     const user = userEvent.setup();
 

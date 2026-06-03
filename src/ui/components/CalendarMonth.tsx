@@ -12,6 +12,7 @@ type CalendarMonthProps = {
   onSelectDay: (date: ISODate) => void;
   onPrevMonth?: () => void;
   onNextMonth?: () => void;
+  onJumpToToday?: () => void;
 };
 
 const weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
@@ -23,7 +24,8 @@ export function CalendarMonth({
   today,
   onSelectDay,
   onPrevMonth,
-  onNextMonth
+  onNextMonth,
+  onJumpToToday
 }: CalendarMonthProps) {
   const headingId = useId();
   const monthStart = startOfMonth(parseISO(monthDate));
@@ -31,6 +33,9 @@ export function CalendarMonth({
   const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
   const leadingEmptyDays = (getDay(monthStart) + 6) % 7;
   const monthLabel = formatMonthLabel(monthStart);
+  const todayMonthDate = today ? `${today.slice(0, 7)}-01` : undefined;
+  const isCurrentMonth = todayMonthDate === monthDate;
+  const showJumpToToday = Boolean(onJumpToToday && today && !isCurrentMonth);
 
   return (
     <section className="calendar-month" aria-labelledby={headingId}>
@@ -48,6 +53,15 @@ export function CalendarMonth({
         <div className="calendar-month__title">
           <p className="eyebrow">Monat</p>
           <h2 id={headingId}>{monthLabel}</h2>
+          {showJumpToToday ? (
+            <button
+              type="button"
+              className="calendar-month__today"
+              onClick={() => onJumpToToday?.()}
+            >
+              Heute
+            </button>
+          ) : null}
         </div>
         {onNextMonth ? (
           <button
