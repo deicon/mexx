@@ -177,6 +177,33 @@ h2 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+  margin-top: 10px;
+}
+
+.exports-shell {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+}
+
+.import-preview {
+  display: grid;
+  gap: 8px;
+  border: 1px solid rgba(33, 31, 29, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(255, 252, 247, 0.78);
+}
+
+.import-preview h3 {
+  margin: 0;
+  font-size: 0.96rem;
+}
+
+.import-preview p {
+  margin: 0;
+  color: #4d4943;
+  font-weight: 720;
 }
 
 .quick-action {

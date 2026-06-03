@@ -6,8 +6,10 @@ import { trackerRepository } from './storage/repository';
 import { CaptureScreens } from './ui/screens/CaptureScreens';
 import { DashboardScreen } from './ui/screens/DashboardScreen';
 import { DayDetailScreen } from './ui/screens/DayDetailScreen';
+import { ExportsScreen } from './ui/screens/ExportsScreen';
 import { KnownTermsScreen } from './ui/screens/KnownTermsScreen';
 import { PhasesScreen } from './ui/screens/PhasesScreen';
+import { ReportsScreen } from './ui/screens/ReportsScreen';
 
 type LoadState =
   | { status: 'loading' }
@@ -19,7 +21,9 @@ export function App() {
   const [captureType, setCaptureType] = useState<EventType | null>(null);
   const [selectedDayDetailDate, setSelectedDayDetailDate] = useState<ISODate | null>(null);
   const [eventToEdit, setEventToEdit] = useState<AppState['events'][number] | null>(null);
-  const [maintenanceScreen, setMaintenanceScreen] = useState<'phases' | 'knownTerms' | null>(null);
+  const [maintenanceScreen, setMaintenanceScreen] = useState<
+    'phases' | 'knownTerms' | 'exports' | 'reports' | null
+  >(null);
   const today = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
 
   useEffect(() => {
@@ -120,6 +124,29 @@ export function App() {
     );
   }
 
+  if (maintenanceScreen === 'exports') {
+    return (
+      <ExportsScreen
+        appState={loadState.state}
+        repository={trackerRepository}
+        onBack={() => setMaintenanceScreen(null)}
+        onChanged={async () => {
+          await reloadAppState(() => true);
+        }}
+      />
+    );
+  }
+
+  if (maintenanceScreen === 'reports') {
+    return (
+      <ReportsScreen
+        appState={loadState.state}
+        onBack={() => setMaintenanceScreen(null)}
+        today={today}
+      />
+    );
+  }
+
   return (
     <DashboardScreen
       dayStates={calculateVisibleDayStates(loadState.state, today)}
@@ -128,6 +155,8 @@ export function App() {
       onAction={setCaptureType}
       onOpenPhases={() => setMaintenanceScreen('phases')}
       onOpenKnownTerms={() => setMaintenanceScreen('knownTerms')}
+      onOpenExports={() => setMaintenanceScreen('exports')}
+      onOpenReports={() => setMaintenanceScreen('reports')}
       onOpenDay={setSelectedDayDetailDate}
     />
   );

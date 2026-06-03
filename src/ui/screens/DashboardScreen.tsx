@@ -13,6 +13,8 @@ type DashboardScreenProps = {
   onAction?: (type: EventType) => void;
   onOpenPhases?: () => void;
   onOpenKnownTerms?: () => void;
+  onOpenExports?: () => void;
+  onOpenReports?: () => void;
   onSelectDay?: (date: ISODate) => void;
   onOpenDay?: (date: ISODate) => void;
 };
@@ -25,6 +27,8 @@ export function DashboardScreen({
   onAction,
   onOpenPhases,
   onOpenKnownTerms,
+  onOpenExports,
+  onOpenReports,
   onSelectDay,
   onOpenDay
 }: DashboardScreenProps) {
@@ -68,6 +72,12 @@ export function DashboardScreen({
         </button>
         <button className="secondary-dashboard-action" type="button" onClick={onOpenKnownTerms}>
           Begriffe
+        </button>
+        <button className="secondary-dashboard-action" type="button" onClick={onOpenReports}>
+          Bericht
+        </button>
+        <button className="secondary-dashboard-action" type="button" onClick={onOpenExports}>
+          Daten
         </button>
       </div>
 
