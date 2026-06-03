@@ -12,6 +12,7 @@ type DashboardScreenProps = {
   backupStatusLabel?: string;
   onAction?: (type: EventType) => void;
   onSelectDay?: (date: ISODate) => void;
+  onOpenDay?: (date: ISODate) => void;
 };
 
 export function DashboardScreen({
@@ -20,7 +21,8 @@ export function DashboardScreen({
   backupStatus,
   backupStatusLabel,
   onAction,
-  onSelectDay
+  onSelectDay,
+  onOpenDay
 }: DashboardScreenProps) {
   const [selectedDate, setSelectedDate] = useState<ISODate>(today);
   const todayState = dayStates[today];
@@ -70,6 +72,9 @@ export function DashboardScreen({
         <p className="eyebrow">Auswahl</p>
         <h2 id="selected-day-heading">{formatLongDate(parseISO(selectedDate))}</h2>
         <p>{summaryText(selectedState)}</p>
+        <button className="secondary-button selected-day__open" type="button" onClick={() => onOpenDay?.(selectedDate)}>
+          Tag oeffnen
+        </button>
       </section>
     </main>
   );

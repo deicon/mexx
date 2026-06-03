@@ -5,6 +5,7 @@ import { AppState, EventType, ISODate } from './domain/types';
 import { trackerRepository } from './storage/repository';
 import { CaptureScreens } from './ui/screens/CaptureScreens';
 import { DashboardScreen } from './ui/screens/DashboardScreen';
+import { DayDetailScreen } from './ui/screens/DayDetailScreen';
 
 type LoadState =
   | { status: 'loading' }
@@ -14,6 +15,8 @@ type LoadState =
 export function App() {
   const [loadState, setLoadState] = useState<LoadState>({ status: 'loading' });
   const [captureType, setCaptureType] = useState<EventType | null>(null);
+  const [selectedDayDetailDate, setSelectedDayDetailDate] = useState<ISODate | null>(null);
+  const [eventToEdit, setEventToEdit] = useState<AppState['events'][number] | null>(null);
   const today = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
 
   useEffect(() => {
@@ -42,6 +45,22 @@ export function App() {
     );
   }
 
+  if (eventToEdit) {
+    return (
+      <CaptureScreens
+        type={eventToEdit.type}
+        appState={loadState.state}
+        repository={trackerRepository}
+        eventToEdit={eventToEdit}
+        onCancel={() => setEventToEdit(null)}
+        onDone={async () => {
+          await reloadAppState(() => true);
+          setEventToEdit(null);
+        }}
+      />
+    );
+  }
+
   if (captureType) {
     return (
       <CaptureScreens
@@ -57,12 +76,28 @@ export function App() {
     );
   }
 
+  if (selectedDayDetailDate) {
+    return (
+      <DayDetailScreen
+        appState={loadState.state}
+        date={selectedDayDetailDate}
+        repository={trackerRepository}
+        onBack={() => setSelectedDayDetailDate(null)}
+        onEdit={setEventToEdit}
+        onChanged={async () => {
+          await reloadAppState(() => true);
+        }}
+      />
+    );
+  }
+
   return (
     <DashboardScreen
       dayStates={calculateVisibleDayStates(loadState.state, today)}
       today={today}
       backupStatus={loadState.state.settings.backupStatus}
       onAction={setCaptureType}
+      onOpenDay={setSelectedDayDetailDate}
     />
   );
 

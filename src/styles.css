@@ -201,6 +201,7 @@ h2 {
 .text-button:focus-visible,
 .primary-button:focus-visible,
 .secondary-button:focus-visible,
+.danger-button:focus-visible,
 .term-pill:focus-visible {
   outline: 3px solid #2f6f72;
   outline-offset: 2px;
@@ -295,6 +296,11 @@ h2 {
   margin: 8px 0 0;
   color: #4d4943;
   font-weight: 700;
+}
+
+.selected-day__open {
+  width: 100%;
+  margin-top: 14px;
 }
 
 .capture-shell {
@@ -451,6 +457,82 @@ h2 {
   border: 1px solid rgba(47, 111, 114, 0.34);
   background: rgba(255, 252, 247, 0.9);
   color: #244f51;
+}
+
+.danger-button {
+  min-height: 46px;
+  border: 1px solid rgba(159, 51, 47, 0.34);
+  border-radius: 8px;
+  padding: 10px 14px;
+  background: rgba(255, 252, 247, 0.9);
+  color: #8a2e2a;
+  font-weight: 840;
+  cursor: pointer;
+}
+
+.day-detail-shell {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+
+.day-detail-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.day-event-list {
+  display: grid;
+  gap: 10px;
+}
+
+.empty-day-text {
+  margin: 6px 0 0;
+  color: #5f5a53;
+  font-weight: 700;
+}
+
+.day-event-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(33, 31, 29, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(255, 252, 247, 0.78);
+}
+
+.day-event-card__main {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.day-event-card time {
+  color: #244f51;
+  font-weight: 850;
+}
+
+.day-event-card h2 {
+  font-size: 1rem;
+}
+
+.day-event-card p {
+  margin: 5px 0 0;
+  color: #4d4943;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.day-event-card__note {
+  color: #686159;
+  font-weight: 600;
+}
+
+.day-event-card__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .form-actions {

@@ -37,6 +37,7 @@ type CaptureScreensProps = {
   type: EventType;
   appState: AppState;
   repository: CaptureRepository;
+  eventToEdit?: TrackerEvent;
   onDone: () => void | Promise<void>;
   onCancel: () => void;
   now?: () => Date;
@@ -51,19 +52,28 @@ const typeLabels: Record<EventType, string> = {
   observation: 'Beobachtung erfassen'
 };
 
+const editTypeLabels: Record<EventType, string> = {
+  seizure: 'Anfall bearbeiten',
+  meal: 'Mahlzeit bearbeiten',
+  stool: 'Kot bearbeiten',
+  dose: 'Gabe bearbeiten',
+  observation: 'Beobachtung bearbeiten'
+};
+
 export function CaptureScreens({
   type,
   appState,
   repository,
+  eventToEdit,
   onDone,
   onCancel,
   now = () => new Date(),
   createId = () => crypto.randomUUID()
 }: CaptureScreensProps) {
-  const initialNow = useMemo(() => now(), []);
-  const [eventTime, setEventTime] = useState(toDateTimeLocalValue(initialNow));
+  const initialEventTime = useMemo(() => eventToEdit?.eventTime ?? now().toISOString(), [eventToEdit, now]);
+  const [eventTime, setEventTime] = useState(toDateTimeLocalValue(new Date(initialEventTime)));
   const [eventTimeError, setEventTimeError] = useState('');
-  const [note, setNote] = useState('');
+  const [note, setNote] = useState(eventToEdit && 'note' in eventToEdit ? eventToEdit.note ?? '' : '');
   const [saving, setSaving] = useState(false);
 
   async function saveEvent(event: TrackerEvent, terms: Array<{ kind: KnownTermKind; value: string }>) {
@@ -98,6 +108,7 @@ export function CaptureScreens({
   const common = {
     appState,
     createId,
+    eventToEdit,
     eventTime,
     eventTimeError,
     getEventTimeIso: readEventTimeIso,
@@ -116,7 +127,7 @@ export function CaptureScreens({
         <button className="text-button" type="button" onClick={onCancel}>
           Zurueck
         </button>
-        <h1 id="capture-title">{typeLabels[type]}</h1>
+        <h1 id="capture-title">{eventToEdit ? editTypeLabels[type] : typeLabels[type]}</h1>
       </section>
 
       {type === 'seizure' ? <SeizureForm {...common} /> : null}
@@ -131,6 +142,7 @@ export function CaptureScreens({
 type FormProps = {
   appState: AppState;
   createId: () => string;
+  eventToEdit?: TrackerEvent;
   eventTime: string;
   eventTimeError: string;
   getEventTimeIso: () => string | null;
@@ -146,6 +158,7 @@ type FormProps = {
 function SeizureForm({
   appState,
   createId,
+  eventToEdit,
   eventTime,
   eventTimeError,
   getEventTimeIso,
@@ -156,10 +169,11 @@ function SeizureForm({
   onSave,
   saving
 }: FormProps) {
-  const [severity, setSeverity] = useState<SeizureSeverity>('medium');
-  const [durationClass, setDurationClass] = useState<SeizureDurationClass>('unknown');
-  const [exactDuration, setExactDuration] = useState('');
-  const [triggers, setTriggers] = useState<string[]>([]);
+  const editEvent = eventToEdit?.type === 'seizure' ? eventToEdit : undefined;
+  const [severity, setSeverity] = useState<SeizureSeverity>(editEvent?.severity ?? 'medium');
+  const [durationClass, setDurationClass] = useState<SeizureDurationClass>(editEvent?.durationClass ?? 'unknown');
+  const [exactDuration, setExactDuration] = useState(editEvent?.exactDuration ? String(editEvent.exactDuration.value) : '');
+  const [triggers, setTriggers] = useState<string[]>(editEvent?.triggerTags ?? []);
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -169,13 +183,13 @@ function SeizureForm({
       return;
     }
 
-    const captureTime = now().toISOString();
+    const changeTime = now().toISOString();
     const seizure: SeizureEvent = {
-      id: createId(),
+      id: editEvent?.id ?? createId(),
       type: 'seizure',
       eventTime: parsedEventTime,
-      captureTime,
-      changeTime: captureTime,
+      captureTime: editEvent?.captureTime ?? changeTime,
+      changeTime,
       severity,
       durationClass,
       ...(exactDuration.trim() ? { exactDuration: { value: Number(exactDuration), unit: 'seconds' } } : {}),
@@ -228,6 +242,7 @@ function SeizureForm({
 function MealForm({
   appState,
   createId,
+  eventToEdit,
   eventTime,
   eventTimeError,
   getEventTimeIso,
@@ -238,11 +253,14 @@ function MealForm({
   onSave,
   saving
 }: FormProps) {
-  const [templateId, setTemplateId] = useState('');
-  const [components, setComponents] = useState<FoodComponentDraft[]>([
-    { name: '', consumedAmount: '0', unit: 'g' }
-  ]);
-  const [consumptionStatus, setConsumptionStatus] = useState<ConsumptionStatus>('eaten');
+  const editEvent = eventToEdit?.type === 'meal' ? eventToEdit : undefined;
+  const [templateId, setTemplateId] = useState(editEvent?.mealTemplateId ?? '');
+  const [components, setComponents] = useState<FoodComponentDraft[]>(
+    editEvent?.foodComponents.map((component) => ({ ...component, consumedAmount: String(component.consumedAmount) })) ?? [
+      { name: '', consumedAmount: '0', unit: 'g' }
+    ]
+  );
+  const [consumptionStatus, setConsumptionStatus] = useState<ConsumptionStatus>(editEvent?.consumptionStatus ?? 'eaten');
 
   function applyTemplate(value: string) {
     setTemplateId(value);
@@ -269,13 +287,13 @@ function MealForm({
       return;
     }
 
-    const captureTime = now().toISOString();
+    const changeTime = now().toISOString();
     const meal: MealEvent = {
-      id: createId(),
+      id: editEvent?.id ?? createId(),
       type: 'meal',
       eventTime: parsedEventTime,
-      captureTime,
-      changeTime: captureTime,
+      captureTime: editEvent?.captureTime ?? changeTime,
+      changeTime,
       foodComponents: foodComponents as [FoodComponent, ...FoodComponent[]],
       consumptionStatus,
       ...(templateId ? { mealTemplateId: templateId } : {}),
@@ -352,6 +370,7 @@ function MealForm({
 function StoolForm({
   appState,
   createId,
+  eventToEdit,
   eventTime,
   eventTimeError,
   getEventTimeIso,
@@ -362,8 +381,9 @@ function StoolForm({
   onSave,
   saving
 }: FormProps) {
-  const [quality, setQuality] = useState<StoolQuality>('normal');
-  const [flags, setFlags] = useState<string[]>([]);
+  const editEvent = eventToEdit?.type === 'stool' ? eventToEdit : undefined;
+  const [quality, setQuality] = useState<StoolQuality>(editEvent?.quality ?? 'normal');
+  const [flags, setFlags] = useState<string[]>(editEvent?.stoolFlags ?? []);
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -373,13 +393,13 @@ function StoolForm({
       return;
     }
 
-    const captureTime = now().toISOString();
+    const changeTime = now().toISOString();
     const stool: StoolEvent = {
-      id: createId(),
+      id: editEvent?.id ?? createId(),
       type: 'stool',
       eventTime: parsedEventTime,
-      captureTime,
-      changeTime: captureTime,
+      captureTime: editEvent?.captureTime ?? changeTime,
+      changeTime,
       quality,
       stoolFlags: flags,
       ...optionalNote(note)
@@ -408,6 +428,7 @@ function StoolForm({
 function DoseForm({
   appState,
   createId,
+  eventToEdit,
   eventTime,
   eventTimeError,
   getEventTimeIso,
@@ -418,11 +439,12 @@ function DoseForm({
   onSave,
   saving
 }: FormProps) {
-  const [category, setCategory] = useState<DoseCategory>('supplement');
-  const [name, setName] = useState('');
-  const [amount, setAmount] = useState('0');
-  const [unit, setUnit] = useState<DoseUnit>('mg');
-  const [associatedMealId, setAssociatedMealId] = useState('');
+  const editEvent = eventToEdit?.type === 'dose' ? eventToEdit : undefined;
+  const [category, setCategory] = useState<DoseCategory>(editEvent?.category ?? 'supplement');
+  const [name, setName] = useState(editEvent?.name ?? '');
+  const [amount, setAmount] = useState(editEvent ? String(editEvent.administeredAmount) : '0');
+  const [unit, setUnit] = useState<DoseUnit>(editEvent?.unit ?? 'mg');
+  const [associatedMealId, setAssociatedMealId] = useState(editEvent?.associatedMealId ?? '');
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -438,13 +460,13 @@ function DoseForm({
       return;
     }
 
-    const captureTime = now().toISOString();
+    const changeTime = now().toISOString();
     const dose: DoseEvent = {
-      id: createId(),
+      id: editEvent?.id ?? createId(),
       type: 'dose',
       eventTime: parsedEventTime,
-      captureTime,
-      changeTime: captureTime,
+      captureTime: editEvent?.captureTime ?? changeTime,
+      changeTime,
       category,
       name: trimmedName,
       administeredAmount: Number(amount),
@@ -501,6 +523,7 @@ function DoseForm({
 function ObservationForm({
   appState,
   createId,
+  eventToEdit,
   eventTime,
   eventTimeError,
   getEventTimeIso,
@@ -511,7 +534,8 @@ function ObservationForm({
   onSave,
   saving
 }: FormProps) {
-  const [tags, setTags] = useState<string[]>([]);
+  const editEvent = eventToEdit?.type === 'observation' ? eventToEdit : undefined;
+  const [tags, setTags] = useState<string[]>(editEvent?.observationTags ?? []);
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -521,13 +545,13 @@ function ObservationForm({
       return;
     }
 
-    const captureTime = now().toISOString();
+    const changeTime = now().toISOString();
     const observation: ObservationEvent = {
-      id: createId(),
+      id: editEvent?.id ?? createId(),
       type: 'observation',
       eventTime: parsedEventTime,
-      captureTime,
-      changeTime: captureTime,
+      captureTime: editEvent?.captureTime ?? changeTime,
+      changeTime,
       observationTags: tags,
       ...optionalNote(note)
     };
