@@ -1,7 +1,7 @@
 import { format, parseISO } from 'date-fns';
 import { useMemo, useState } from 'react';
 import { DayState } from '../../domain/dayState';
-import { BackupStatus, ISODate } from '../../domain/types';
+import { BackupStatus, EventType, ISODate } from '../../domain/types';
 import { CalendarMonth } from '../components/CalendarMonth';
 import { QuickActions } from '../components/QuickActions';
 
@@ -10,6 +10,7 @@ type DashboardScreenProps = {
   today: ISODate;
   backupStatus?: BackupStatus;
   backupStatusLabel?: string;
+  onAction?: (type: EventType) => void;
   onSelectDay?: (date: ISODate) => void;
 };
 
@@ -18,6 +19,7 @@ export function DashboardScreen({
   today,
   backupStatus,
   backupStatusLabel,
+  onAction,
   onSelectDay
 }: DashboardScreenProps) {
   const [selectedDate, setSelectedDate] = useState<ISODate>(today);
@@ -48,7 +50,11 @@ export function DashboardScreen({
         <StatusMetric label="Kot" value={todayState.stoolSummary.total} />
       </section>
 
-      <QuickActions />
+      <QuickActions onAction={onAction} />
+
+      <button className="secondary-dashboard-action" type="button" onClick={() => onAction?.('observation')}>
+        Beobachtung
+      </button>
 
       <p className="backup-hint">{backupStatusLabel ?? formatBackupStatus(backupStatus)}</p>
 

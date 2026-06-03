@@ -30,6 +30,12 @@ button {
   font: inherit;
 }
 
+input,
+select,
+textarea {
+  font: inherit;
+}
+
 #root {
   min-height: 100vh;
 }
@@ -154,6 +160,19 @@ h2 {
   gap: 10px;
 }
 
+.secondary-dashboard-action {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 10px;
+  border: 1px solid rgba(47, 111, 114, 0.28);
+  border-radius: 8px;
+  background: rgba(255, 252, 247, 0.72);
+  color: #244f51;
+  font-weight: 820;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .quick-action {
   display: flex;
   min-height: 82px;
@@ -171,12 +190,18 @@ h2 {
 }
 
 .quick-action:active,
-.calendar-day:active {
+.calendar-day:active,
+.secondary-dashboard-action:active {
   transform: translateY(1px);
 }
 
 .quick-action:focus-visible,
-.calendar-day:focus-visible {
+.calendar-day:focus-visible,
+.secondary-dashboard-action:focus-visible,
+.text-button:focus-visible,
+.primary-button:focus-visible,
+.secondary-button:focus-visible,
+.term-pill:focus-visible {
   outline: 3px solid #2f6f72;
   outline-offset: 2px;
 }
@@ -270,6 +295,169 @@ h2 {
   margin: 8px 0 0;
   color: #4d4943;
   font-weight: 700;
+}
+
+.capture-shell {
+  padding-top: calc(16px + env(safe-area-inset-top));
+}
+
+.capture-header {
+  display: grid;
+  gap: 14px;
+  padding: 4px 0 18px;
+}
+
+.capture-header h1 {
+  font-size: clamp(1.75rem, 9vw, 2.4rem);
+  line-height: 1;
+}
+
+.text-button {
+  width: fit-content;
+  border: 0;
+  padding: 8px 0;
+  background: transparent;
+  color: #2f6f72;
+  font-weight: 820;
+  cursor: pointer;
+}
+
+.capture-form {
+  display: grid;
+  gap: 14px;
+}
+
+.form-field,
+.inline-fields label,
+.component-row label {
+  display: grid;
+  gap: 7px;
+}
+
+.form-field span,
+.inline-fields span,
+.component-row span,
+.form-fieldset legend {
+  color: #5f5a53;
+  font-size: 0.8rem;
+  font-weight: 820;
+}
+
+.form-field .field-error {
+  color: #9f332f;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea,
+.inline-fields input,
+.inline-fields select,
+.component-row input,
+.component-row select {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid rgba(33, 31, 29, 0.16);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: rgba(255, 252, 247, 0.92);
+  color: #211f1d;
+}
+
+.form-field textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.form-fieldset {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  border: 1px solid rgba(33, 31, 29, 0.12);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(255, 252, 247, 0.54);
+}
+
+.term-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.term-pill {
+  min-height: 38px;
+  border: 1px solid rgba(47, 111, 114, 0.34);
+  border-radius: 999px;
+  padding: 7px 12px;
+  background: rgba(255, 252, 247, 0.9);
+  color: #244f51;
+  font-weight: 780;
+  cursor: pointer;
+}
+
+.term-pill--selected {
+  background: #2f6f72;
+  color: #fffaf6;
+}
+
+.inline-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.inline-fields--even {
+  grid-template-columns: minmax(0, 1fr) minmax(104px, 0.58fr);
+}
+
+.component-row {
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid rgba(33, 31, 29, 0.1);
+  padding-top: 10px;
+}
+
+.component-row:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.primary-button,
+.secondary-button {
+  min-height: 46px;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-weight: 840;
+  cursor: pointer;
+}
+
+.primary-button {
+  width: 100%;
+  border: 0;
+  background: #2f6f72;
+  color: #fffaf6;
+}
+
+.primary-button:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.secondary-button {
+  border: 1px solid rgba(47, 111, 114, 0.34);
+  background: rgba(255, 252, 247, 0.9);
+  color: #244f51;
+}
+
+.form-actions {
+  position: sticky;
+  bottom: 0;
+  padding: 8px 0 calc(4px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(242, 234, 223, 0), #e9efe7 34%);
 }
 
 @media (min-width: 431px) {
