@@ -172,7 +172,7 @@ function SeizureForm({
 }: FormProps) {
   const editEvent = eventToEdit?.type === 'seizure' ? eventToEdit : undefined;
   const [severity, setSeverity] = useState<SeizureSeverity>(editEvent?.severity ?? 'medium');
-  const [durationClass, setDurationClass] = useState<SeizureDurationClass>(editEvent?.durationClass ?? 'unknown');
+  const [durationClass, setDurationClass] = useState<SeizureDurationClass>(editEvent?.durationClass ?? 'under-1-min');
   const [exactDuration, setExactDuration] = useState(editEvent?.exactDuration ? String(editEvent.exactDuration.value) : '');
   const [triggers, setTriggers] = useState<string[]>(editEvent?.triggerTags ?? []);
 
@@ -210,11 +210,11 @@ function SeizureForm({
         <option value="severe">schwer</option>
       </SelectField>
       <SelectField label="Dauerklasse" value={durationClass} onChange={(value) => setDurationClass(value as SeizureDurationClass)}>
+        <option value="under-1-min">unter 1 Minute</option>
+        <option value="1-3-min">1 bis 3 Minuten</option>
+        <option value="3-5-min">3 bis 5 Minuten</option>
+        <option value="over-5-min">ueber 5 Minuten</option>
         <option value="unknown">unbekannt</option>
-        <option value="under-1-min">unter 1 min</option>
-        <option value="1-3-min">1-3 min</option>
-        <option value="3-5-min">3-5 min</option>
-        <option value="over-5-min">ueber 5 min</option>
       </SelectField>
       <label className="form-field">
         <span>Exakte Dauer in Sekunden</span>

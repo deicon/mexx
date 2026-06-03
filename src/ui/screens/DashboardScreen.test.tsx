@@ -13,33 +13,53 @@ afterEach(() => {
 });
 
 describe('DashboardScreen', () => {
-  it('renders primary quick-action labels', () => {
+  it('reveals quick-capture actions when the FAB is opened', async () => {
+    const user = userEvent.setup();
+
     render(<DashboardScreen dayStates={dayStates} today="2026-06-03" backupStatusLabel="Backup offen" />);
+
+    expect(screen.queryByRole('button', { name: 'Anfall' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /Erfassen oeffnen/i }));
 
     expect(screen.getByRole('button', { name: 'Anfall' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Mahlzeit' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Kot' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Gabe' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Beobachtung' })).toBeInTheDocument();
   });
 
-  it('renders the selected day summary after choosing a calendar day', async () => {
+  it('opens the day detail directly when a calendar day is tapped', async () => {
     const user = userEvent.setup();
-    const onSelectDay = vi.fn();
+    const onOpenDay = vi.fn();
 
     render(
       <DashboardScreen
         dayStates={dayStates}
         today="2026-06-03"
         backupStatusLabel="Backup offen"
-        onSelectDay={onSelectDay}
+        onOpenDay={onOpenDay}
       />
     );
 
     await user.click(screen.getByRole('button', { name: '5. Juni 2026, Status akut' }));
 
-    expect(onSelectDay).toHaveBeenCalledWith('2026-06-05');
-    expect(screen.getByRole('heading', { name: '5. Juni 2026' })).toBeInTheDocument();
-    expect(screen.getByText(/2 Anfaelle/)).toBeInTheDocument();
+    expect(onOpenDay).toHaveBeenCalledWith('2026-06-05');
+  });
+
+  it('lets the user page through months via the calendar header', async () => {
+    const user = userEvent.setup();
+
+    render(<DashboardScreen dayStates={dayStates} today="2026-06-03" backupStatusLabel="Backup offen" />);
+
+    expect(screen.getByRole('heading', { name: 'Juni 2026' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Naechster Monat' }));
+    expect(screen.getByRole('heading', { name: 'Juli 2026' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Vorheriger Monat' }));
+    await user.click(screen.getByRole('button', { name: 'Vorheriger Monat' }));
+    expect(screen.getByRole('heading', { name: 'Mai 2026' })).toBeInTheDocument();
   });
 });
 

@@ -187,9 +187,9 @@ describe('buildClinicalReport', () => {
       generatedAt: '2026-06-03T20:00:00.000Z'
     });
 
-    expect(report.correlationDisclaimer).toMatch(/correlation/i);
-    expect(report.correlationDisclaimer).not.toMatch(/caused|diagnos|treatment/i);
-    expect(report.correlationDisclaimer).not.toMatch(/triggered/i);
+    expect(report.correlationDisclaimer).toMatch(/korrelation/i);
+    expect(report.correlationDisclaimer).not.toMatch(/ursache|diagnos|behandl/i);
+    expect(report.correlationDisclaimer).not.toMatch(/ausgelöst|ausgeloest/i);
   });
 
   it('excludes deleted events from the totals and correlations', () => {

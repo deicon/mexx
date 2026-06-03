@@ -157,7 +157,7 @@ export type ClinicalReportInput = {
 };
 
 export const CORRELATION_DISCLAIMER =
-  'Correlation only. The numbers below describe time proximity between events and do not establish causation.';
+  'Nur Korrelation. Die folgenden Werte zeigen ausschliesslich die zeitliche Naehe von Ereignissen.';
 
 export function buildClinicalReport(state: AppState, input: ClinicalReportInput): ClinicalReport {
   const activeEvents: TrackerEvent[] = state.events.filter((event) => event.deleted !== true);

@@ -24,7 +24,7 @@ describe('ReportsScreen', () => {
     expect(screen.getByRole('heading', { name: /Klinischer Bericht/i })).toBeInTheDocument();
     expect(screen.getByText(/Zeitraum: 2026-05-28 bis 2026-06-03/)).toBeInTheDocument();
     expect(screen.getByRole('region', { name: /Zusammenfassung/i })).toBeInTheDocument();
-    expect(screen.getByText(/Correlation only/i)).toBeInTheDocument();
+    expect(screen.getByText(/Nur Korrelation/i)).toBeInTheDocument();
   });
 
   it('updates the report when selecting a different period', async () => {

@@ -143,6 +143,10 @@ export function App() {
         appState={loadState.state}
         onBack={() => setMaintenanceScreen(null)}
         today={today}
+        onCapture={(type) => {
+          setMaintenanceScreen(null);
+          setCaptureType(type);
+        }}
       />
     );
   }

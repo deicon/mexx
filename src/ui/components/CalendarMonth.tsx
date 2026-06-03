@@ -1,4 +1,5 @@
 import { eachDayOfInterval, endOfMonth, format, getDay, parseISO, startOfMonth } from 'date-fns';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useId } from 'react';
 import { DayState } from '../../domain/dayState';
 import { ISODate } from '../../domain/types';
@@ -9,11 +10,21 @@ type CalendarMonthProps = {
   selectedDate?: ISODate;
   today?: ISODate;
   onSelectDay: (date: ISODate) => void;
+  onPrevMonth?: () => void;
+  onNextMonth?: () => void;
 };
 
 const weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
-export function CalendarMonth({ monthDate, dayStates, selectedDate, today, onSelectDay }: CalendarMonthProps) {
+export function CalendarMonth({
+  monthDate,
+  dayStates,
+  selectedDate,
+  today,
+  onSelectDay,
+  onPrevMonth,
+  onNextMonth
+}: CalendarMonthProps) {
   const headingId = useId();
   const monthStart = startOfMonth(parseISO(monthDate));
   const monthEnd = endOfMonth(monthStart);
@@ -23,9 +34,31 @@ export function CalendarMonth({ monthDate, dayStates, selectedDate, today, onSel
 
   return (
     <section className="calendar-month" aria-labelledby={headingId}>
-      <div className="section-heading">
-        <p className="eyebrow">Monat</p>
-        <h2 id={headingId}>{monthLabel}</h2>
+      <div className="calendar-month__heading">
+        {onPrevMonth ? (
+          <button
+            type="button"
+            className="calendar-month__nav"
+            aria-label="Vorheriger Monat"
+            onClick={onPrevMonth}
+          >
+            <ChevronLeft aria-hidden="true" size={20} />
+          </button>
+        ) : null}
+        <div className="calendar-month__title">
+          <p className="eyebrow">Monat</p>
+          <h2 id={headingId}>{monthLabel}</h2>
+        </div>
+        {onNextMonth ? (
+          <button
+            type="button"
+            className="calendar-month__nav"
+            aria-label="Naechster Monat"
+            onClick={onNextMonth}
+          >
+            <ChevronRight aria-hidden="true" size={20} />
+          </button>
+        ) : null}
       </div>
 
       <div className="calendar-grid" role="grid" aria-label={monthLabel}>

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { appStateFixture } from './domain/fixtures';
@@ -45,6 +45,7 @@ describe('App capture flow', () => {
     render(<App />);
 
     await screen.findByRole('heading', { name: 'Mexx' });
+    await user.click(screen.getByRole('button', { name: /Erfassen oeffnen/i }));
     await user.click(screen.getByRole('button', { name: 'Beobachtung' }));
 
     expect(screen.getByRole('heading', { name: 'Beobachtung erfassen' })).toBeInTheDocument();
@@ -60,6 +61,7 @@ describe('App capture flow', () => {
     render(<App />);
 
     await screen.findByRole('heading', { name: 'Mexx' });
+    await user.click(screen.getByRole('button', { name: /Erfassen oeffnen/i }));
     await user.click(screen.getByRole('button', { name: 'Anfall' }));
     await user.click(screen.getByRole('button', { name: 'Speichern' }));
 
@@ -83,7 +85,9 @@ describe('App capture flow', () => {
     );
 
     await screen.findByRole('heading', { name: 'Mexx' });
-    expect(screen.getByText('1 Anfall, 1 Eintrag')).toBeInTheDocument();
+    const summary = screen.getByRole('region', { name: 'Heutige Zusammenfassung' });
+    const anfaelle = within(summary).getByText('Anfaelle').parentElement!;
+    expect(within(anfaelle).getByText('1')).toBeInTheDocument();
   });
 });
 

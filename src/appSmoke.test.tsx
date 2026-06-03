@@ -38,10 +38,13 @@ afterEach(() => {
 });
 
 describe('App accessibility smoke', () => {
-  it('exposes the dashboard heading and primary quick actions on load', async () => {
+  it('reveals the primary quick actions when the FAB is opened', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
     render(<App />);
 
     await screen.findByRole('heading', { name: 'Mexx' });
+    await user.click(screen.getByRole('button', { name: /Erfassen oeffnen/i }));
 
     for (const label of ['Anfall', 'Mahlzeit', 'Kot', 'Gabe', 'Beobachtung']) {
       expect(screen.getByRole('button', { name: label })).toBeInTheDocument();
@@ -53,6 +56,8 @@ describe('App accessibility smoke', () => {
 
     render(<App />);
     await screen.findByRole('heading', { name: 'Mexx' });
+
+    await user.click(screen.getByRole('button', { name: /Erfassen oeffnen/i }));
 
     const seizureButton = screen.getByRole('button', { name: 'Anfall' });
     seizureButton.focus();
@@ -70,6 +75,7 @@ describe('App accessibility smoke', () => {
     render(<App />);
     await screen.findByRole('heading', { name: 'Mexx' });
 
+    await user.click(screen.getByRole('button', { name: /Erfassen oeffnen/i }));
     await user.click(screen.getByRole('button', { name: 'Mahlzeit' }));
 
     const heading = await screen.findByRole('heading', { name: 'Mahlzeit erfassen' });
@@ -107,10 +113,10 @@ describe('App accessibility smoke', () => {
     render(<App />);
     await screen.findByRole('heading', { name: 'Mexx' });
 
-    await user.click(screen.getByRole('button', { name: 'Bericht' }));
+    await user.click(screen.getAllByRole('button', { name: /Bericht/i })[0]);
 
     expect(await screen.findByRole('heading', { name: /Klinischer Bericht/i })).toBeInTheDocument();
-    expect(screen.getByText(/Correlation only/i)).toBeInTheDocument();
+    expect(screen.getByText(/Nur Korrelation/i)).toBeInTheDocument();
   });
 });
 

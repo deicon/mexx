@@ -1,6 +1,6 @@
 import { format, parseISO } from 'date-fns';
 import { calculateDayState, getEventCalendarDate } from '../../domain/dayState';
-import { AppState, EventId, ISODate, SeizureSeverity, StoolQuality, TrackerEvent } from '../../domain/types';
+import { AppState, EventId, ISODate, SeizureDurationClass, SeizureSeverity, StoolQuality, TrackerEvent } from '../../domain/types';
 
 type DayDetailRepository = {
   markEventDeleted: (eventId: EventId, deletedTime: string) => Promise<void>;
@@ -111,7 +111,7 @@ function eventTypeLabel(event: TrackerEvent): string {
 function eventSummary(event: TrackerEvent): string {
   switch (event.type) {
     case 'seizure':
-      return `Schwere ${seizureSeverityLabel(event.severity)}, Dauer ${event.durationClass}`;
+      return `Schwere ${seizureSeverityLabel(event.severity)}, Dauer ${seizureDurationLabel(event.durationClass)}`;
     case 'meal':
       return event.foodComponents.map((component) => `${component.name} ${component.consumedAmount}${component.unit}`).join(', ');
     case 'stool':
@@ -131,6 +131,18 @@ function seizureSeverityLabel(severity: SeizureSeverity): string {
   };
 
   return labels[severity];
+}
+
+function seizureDurationLabel(durationClass: SeizureDurationClass): string {
+  const labels: Record<SeizureDurationClass, string> = {
+    'under-1-min': 'unter 1 Minute',
+    '1-3-min': '1 bis 3 Minuten',
+    '3-5-min': '3 bis 5 Minuten',
+    'over-5-min': 'ueber 5 Minuten',
+    unknown: 'unbekannt'
+  };
+
+  return labels[durationClass];
 }
 
 function stoolQualityLabel(quality: StoolQuality): string {

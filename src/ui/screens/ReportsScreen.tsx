@@ -10,7 +10,8 @@ import {
   resolveReportPeriod,
   serializeCsvFile
 } from '../../domain/reporting';
-import { AppState, ISODate, SeizureSeverity, TrackerEvent } from '../../domain/types';
+import { AppState, EventType, ISODate, SeizureSeverity, TrackerEvent } from '../../domain/types';
+import { BottomNav } from '../components/BottomNav';
 
 type ReportsScreenProps = {
   appState: AppState;
@@ -19,6 +20,7 @@ type ReportsScreenProps = {
   now?: () => Date;
   downloadFile?: (filename: string, content: string, mimeType: string) => void;
   print?: () => void;
+  onCapture?: (type: EventType) => void;
 };
 
 const PERIOD_LABELS: Record<ReportPeriodKey, string> = {
@@ -40,7 +42,8 @@ export function ReportsScreen({
   today = new Date().toISOString().slice(0, 10),
   now = () => new Date(),
   downloadFile = defaultDownloadFile,
-  print = defaultPrint
+  print = defaultPrint,
+  onCapture
 }: ReportsScreenProps) {
   const [periodKey, setPeriodKey] = useState<ReportPeriodKey>('last-7');
   const [customFrom, setCustomFrom] = useState<ISODate>('');
@@ -86,7 +89,8 @@ export function ReportsScreen({
   }
 
   return (
-    <main className="app-shell reports-shell">
+    <>
+      <main className="app-shell reports-shell app-shell--has-bottom-nav">
       <section className="capture-header" aria-labelledby="reports-title">
         <button className="text-button" type="button" onClick={onBack}>
           Zurueck
@@ -219,7 +223,15 @@ export function ReportsScreen({
       ) : (
         <p className="form-hint">Bitte Zeitraum waehlen.</p>
       )}
-    </main>
+      </main>
+
+      <BottomNav
+        active="reports"
+        onDashboard={onBack}
+        onReports={() => undefined}
+        onCapture={(type) => onCapture?.(type)}
+      />
+    </>
   );
 }
 
