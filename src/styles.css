@@ -173,6 +173,12 @@ h2 {
   -webkit-tap-highlight-color: transparent;
 }
 
+.dashboard-maintenance-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .quick-action {
   display: flex;
   min-height: 82px;
@@ -353,6 +359,13 @@ h2 {
   color: #9f332f;
   font-size: 0.78rem;
   font-weight: 800;
+}
+
+.form-hint {
+  margin: -2px 0 0;
+  color: #6a4e16;
+  font-size: 0.84rem;
+  font-weight: 780;
 }
 
 .form-field input,
@@ -540,6 +553,60 @@ h2 {
   bottom: 0;
   padding: 8px 0 calc(4px + env(safe-area-inset-bottom));
   background: linear-gradient(180deg, rgba(242, 234, 223, 0), #e9efe7 34%);
+}
+
+.maintenance-shell {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+}
+
+.maintenance-section {
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid rgba(33, 31, 29, 0.12);
+  padding-top: 16px;
+}
+
+.maintenance-list,
+.term-table {
+  display: grid;
+  gap: 8px;
+}
+
+.maintenance-card,
+.term-row {
+  border: 1px solid rgba(33, 31, 29, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(255, 252, 247, 0.78);
+}
+
+.maintenance-card h3 {
+  margin: 0;
+  font-size: 0.96rem;
+}
+
+.maintenance-card p {
+  margin: 6px 0 0;
+  color: #4d4943;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.maintenance-card--action {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.term-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  font-weight: 760;
 }
 
 @media (min-width: 431px) {

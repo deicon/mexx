@@ -11,6 +11,8 @@ type DashboardScreenProps = {
   backupStatus?: BackupStatus;
   backupStatusLabel?: string;
   onAction?: (type: EventType) => void;
+  onOpenPhases?: () => void;
+  onOpenKnownTerms?: () => void;
   onSelectDay?: (date: ISODate) => void;
   onOpenDay?: (date: ISODate) => void;
 };
@@ -21,6 +23,8 @@ export function DashboardScreen({
   backupStatus,
   backupStatusLabel,
   onAction,
+  onOpenPhases,
+  onOpenKnownTerms,
   onSelectDay,
   onOpenDay
 }: DashboardScreenProps) {
@@ -57,6 +61,15 @@ export function DashboardScreen({
       <button className="secondary-dashboard-action" type="button" onClick={() => onAction?.('observation')}>
         Beobachtung
       </button>
+
+      <div className="dashboard-maintenance-actions">
+        <button className="secondary-dashboard-action" type="button" onClick={onOpenPhases}>
+          Phasen
+        </button>
+        <button className="secondary-dashboard-action" type="button" onClick={onOpenKnownTerms}>
+          Begriffe
+        </button>
+      </div>
 
       <p className="backup-hint">{backupStatusLabel ?? formatBackupStatus(backupStatus)}</p>
 

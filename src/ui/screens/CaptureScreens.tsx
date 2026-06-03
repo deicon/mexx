@@ -1,4 +1,5 @@
 import { FormEvent, ReactNode, useMemo, useState } from 'react';
+import { learnKnownTerm } from '../../domain/knownTerms';
 import {
   AppState,
   ConsumptionStatus,
@@ -82,7 +83,7 @@ export function CaptureScreens({
 
     await Promise.all(
       terms.map(({ kind, value }) =>
-        repository.saveKnownTerm(buildKnownTerm(appState.knownTerms, kind, value, event.eventTime, createId))
+        repository.saveKnownTerm(learnKnownTerm(appState.knownTerms, kind, value, event.eventTime, createId))
       )
     );
 
@@ -620,25 +621,6 @@ function toFoodComponent(component: FoodComponentDraft): FoodComponent | null {
 
 function knownValues(appState: AppState, kind: KnownTermKind): string[] {
   return appState.knownTerms.filter((term) => term.kind === kind).map((term) => term.value);
-}
-
-function buildKnownTerm(
-  knownTerms: KnownTerm[],
-  kind: KnownTermKind,
-  value: string,
-  eventTime: string,
-  createId: () => string
-): KnownTerm {
-  const trimmedValue = value.trim();
-  const existing = knownTerms.find((term) => term.kind === kind && term.value.toLowerCase() === trimmedValue.toLowerCase());
-
-  return {
-    id: existing?.id ?? createId(),
-    kind,
-    value: existing?.value ?? trimmedValue,
-    lastUsedTime: eventTime,
-    useCount: (existing?.useCount ?? 0) + 1
-  };
 }
 
 function optionalNote(note: string): { note?: string } {
