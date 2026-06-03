@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "vitest --passWithNoTests"
+    "test": "cross-env TZ=Europe/Berlin vitest --passWithNoTests"
   },
   "dependencies": {
     "date-fns": "^4.1.0",
@@ -25,6 +25,7 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^5.2.0",
+    "cross-env": "^10.1.0",
     "typescript": "^5.7.2",
     "vite": "^6.0.1",
     "vite-plugin-pwa": "^0.21.2",
