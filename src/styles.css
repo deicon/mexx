@@ -1,0 +1,131 @@
+:root {
+  color: #211f1d;
+  background: #f7f2eb;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  background: #f7f2eb;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background:
+    linear-gradient(180deg, #f7f2eb 0%, #f3eadf 52%, #edf0e6 100%);
+}
+
+button {
+  font: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app-shell {
+  width: min(100%, 430px);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: calc(18px + env(safe-area-inset-top)) 18px calc(24px + env(safe-area-inset-bottom));
+}
+
+.hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  min-height: 124px;
+  padding: 12px 2px 22px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #686159;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h1,
+h2 {
+  margin: 0;
+  letter-spacing: 0;
+}
+
+h1 {
+  font-size: clamp(2.1rem, 12vw, 3rem);
+  line-height: 0.98;
+}
+
+h2 {
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.quick-action {
+  display: flex;
+  min-height: 88px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid rgba(33, 31, 29, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 252, 247, 0.86);
+  color: #211f1d;
+  font-weight: 700;
+  box-shadow: 0 1px 2px rgba(34, 28, 20, 0.08);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.quick-action:active {
+  transform: translateY(1px);
+}
+
+.quick-action:focus-visible {
+  outline: 3px solid #2f6f72;
+  outline-offset: 2px;
+}
+
+.dashboard {
+  margin-top: 22px;
+  padding-top: 8px;
+}
+
+.dashboard-empty {
+  min-height: 280px;
+  margin-top: 12px;
+  border: 1px dashed rgba(33, 31, 29, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 252, 247, 0.48);
+}
+
+@media (min-width: 431px) {
+  body {
+    background: #ede7dc;
+  }
+
+  .app-shell {
+    background:
+      linear-gradient(180deg, #f7f2eb 0%, #f3eadf 52%, #edf0e6 100%);
+    box-shadow: 0 20px 70px rgba(34, 28, 20, 0.12);
+  }
+}
