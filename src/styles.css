@@ -609,6 +609,147 @@ h2 {
   font-weight: 760;
 }
 
+.reports-shell {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+}
+
+.report-period-options {
+  display: grid;
+  gap: 8px;
+}
+
+.report-period-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 38px;
+  color: #211f1d;
+  font-weight: 720;
+}
+
+.report-period-option input {
+  width: 20px;
+  height: 20px;
+}
+
+.report-period-summary {
+  margin: 0;
+  color: #4d4943;
+  font-weight: 800;
+}
+
+.report-section {
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid rgba(33, 31, 29, 0.12);
+  padding-top: 16px;
+}
+
+.report-totals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.report-day-list,
+.report-phase-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.report-day {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 38px;
+  border: 1px solid rgba(33, 31, 29, 0.1);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-weight: 760;
+}
+
+.report-day--green {
+  background: #c8e6cb;
+}
+
+.report-day--yellow {
+  background: #f4dd77;
+}
+
+.report-day--orange {
+  background: #eca15d;
+}
+
+.report-day--red {
+  background: #d95d57;
+  color: #fffaf6;
+}
+
+.report-correlation {
+  display: grid;
+  gap: 8px;
+  border: 1px solid rgba(33, 31, 29, 0.1);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: rgba(255, 252, 247, 0.78);
+}
+
+.report-correlation h3 {
+  margin: 0;
+  font-size: 0.96rem;
+}
+
+.report-correlation__window h4 {
+  margin: 6px 0 2px;
+  font-size: 0.85rem;
+}
+
+.report-correlation__window ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #4d4943;
+  font-weight: 700;
+}
+
+.report-disclaimer {
+  margin: 0;
+  color: #5f5a53;
+  font-size: 0.86rem;
+  font-style: italic;
+  font-weight: 720;
+}
+
+.report-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+@media print {
+  body {
+    background: #ffffff;
+  }
+
+  .app-shell {
+    width: 100%;
+    min-height: auto;
+    padding: 0;
+    box-shadow: none;
+  }
+
+  .text-button,
+  .report-period-options,
+  .report-actions {
+    display: none !important;
+  }
+}
+
 @media (min-width: 431px) {
   body {
     background: #ede7dc;
