@@ -5,7 +5,6 @@ import { AppState, EventType, ISODate } from './domain/types';
 import { trackerRepository } from './storage/repository';
 import { CaptureScreens } from './ui/screens/CaptureScreens';
 import { DashboardScreen } from './ui/screens/DashboardScreen';
-import { DayDetailScreen } from './ui/screens/DayDetailScreen';
 import { ExportsScreen } from './ui/screens/ExportsScreen';
 import { KnownTermsScreen } from './ui/screens/KnownTermsScreen';
 import { MealTemplatesScreen } from './ui/screens/MealTemplatesScreen';
@@ -17,10 +16,14 @@ type LoadState =
   | { status: 'ready'; state: AppState }
   | { status: 'error'; message: string };
 
+type CaptureRequest = {
+  type: EventType;
+  defaultDate: ISODate;
+};
+
 export function App() {
   const [loadState, setLoadState] = useState<LoadState>({ status: 'loading' });
-  const [captureType, setCaptureType] = useState<EventType | null>(null);
-  const [selectedDayDetailDate, setSelectedDayDetailDate] = useState<ISODate | null>(null);
+  const [captureRequest, setCaptureRequest] = useState<CaptureRequest | null>(null);
   const [eventToEdit, setEventToEdit] = useState<AppState['events'][number] | null>(null);
   const [maintenanceScreen, setMaintenanceScreen] = useState<
     'phases' | 'knownTerms' | 'mealTemplates' | 'exports' | 'reports' | null
@@ -69,31 +72,17 @@ export function App() {
     );
   }
 
-  if (captureType) {
+  if (captureRequest) {
     return (
       <CaptureScreens
-        type={captureType}
+        type={captureRequest.type}
         appState={loadState.state}
         repository={trackerRepository}
-        onCancel={() => setCaptureType(null)}
+        defaultDate={captureRequest.defaultDate}
+        onCancel={() => setCaptureRequest(null)}
         onDone={async () => {
           await reloadAppState(() => true);
-          setCaptureType(null);
-        }}
-      />
-    );
-  }
-
-  if (selectedDayDetailDate) {
-    return (
-      <DayDetailScreen
-        appState={loadState.state}
-        date={selectedDayDetailDate}
-        repository={trackerRepository}
-        onBack={() => setSelectedDayDetailDate(null)}
-        onEdit={setEventToEdit}
-        onChanged={async () => {
-          await reloadAppState(() => true);
+          setCaptureRequest(null);
         }}
       />
     );
@@ -159,7 +148,7 @@ export function App() {
         today={today}
         onCapture={(type) => {
           setMaintenanceScreen(null);
-          setCaptureType(type);
+          setCaptureRequest({ type, defaultDate: today });
         }}
       />
     );
@@ -167,16 +156,21 @@ export function App() {
 
   return (
     <DashboardScreen
+      appState={loadState.state}
       dayStates={calculateVisibleDayStates(loadState.state, today)}
       today={today}
+      repository={trackerRepository}
       backupStatus={loadState.state.settings.backupStatus}
-      onAction={setCaptureType}
+      onAction={(type, selectedDate) => setCaptureRequest({ type, defaultDate: selectedDate })}
+      onEditEvent={setEventToEdit}
+      onReload={async () => {
+        await reloadAppState(() => true);
+      }}
       onOpenPhases={() => setMaintenanceScreen('phases')}
       onOpenKnownTerms={() => setMaintenanceScreen('knownTerms')}
       onOpenMealTemplates={() => setMaintenanceScreen('mealTemplates')}
       onOpenExports={() => setMaintenanceScreen('exports')}
       onOpenReports={() => setMaintenanceScreen('reports')}
-      onOpenDay={setSelectedDayDetailDate}
     />
   );
 

@@ -85,7 +85,7 @@ describe('App capture flow', () => {
     );
 
     await screen.findByRole('heading', { name: 'Mexx' });
-    const summary = screen.getByRole('region', { name: 'Heutige Zusammenfassung' });
+    const summary = screen.getByRole('region', { name: 'Tagesuebersicht' });
     const anfaelle = within(summary).getByText('Anfaelle').parentElement!;
     expect(within(anfaelle).getByText('1')).toBeInTheDocument();
   });

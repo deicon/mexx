@@ -4,7 +4,7 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { calculateDayState, DayState } from '../../domain/dayState';
-import { TrackerEvent } from '../../domain/types';
+import { AppState, SCHEMA_VERSION, TrackerEvent } from '../../domain/types';
 import { CalendarMonth } from '../components/CalendarMonth';
 import { DashboardScreen } from './DashboardScreen';
 
@@ -16,7 +16,7 @@ describe('DashboardScreen', () => {
   it('reveals quick-capture actions when the FAB is opened', async () => {
     const user = userEvent.setup();
 
-    render(<DashboardScreen dayStates={dayStates} today="2026-06-03" backupStatusLabel="Backup offen" />);
+    renderDashboard();
 
     expect(screen.queryByRole('button', { name: 'Anfall' })).not.toBeInTheDocument();
 
@@ -29,22 +29,34 @@ describe('DashboardScreen', () => {
     expect(screen.getByRole('button', { name: 'Beobachtung' })).toBeInTheDocument();
   });
 
-  it('opens the day detail directly when a calendar day is tapped', async () => {
+  it('updates the top summary and event list when a calendar day is tapped', async () => {
     const user = userEvent.setup();
-    const onOpenDay = vi.fn();
 
-    render(
-      <DashboardScreen
-        dayStates={dayStates}
-        today="2026-06-03"
-        backupStatusLabel="Backup offen"
-        onOpenDay={onOpenDay}
-      />
-    );
+    renderDashboard();
+
+    expect(screen.getByText('Heute')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '5. Juni 2026, Status akut' }));
 
-    expect(onOpenDay).toHaveBeenCalledWith('2026-06-05');
+    expect(screen.getByText(/5\. Juni 2026/)).toBeInTheDocument();
+    const summary = screen.getByRole('region', { name: 'Tagesuebersicht' });
+    expect(metricValue(summary, 'Anfaelle')).toHaveTextContent('2');
+
+    const list = screen.getByRole('region', { name: 'Chronologische Eintraege' });
+    expect(within(list).getAllByRole('article')).toHaveLength(2);
+  });
+
+  it('forwards capture taps with the currently selected date', async () => {
+    const user = userEvent.setup();
+    const onAction = vi.fn();
+
+    renderDashboard({ onAction });
+
+    await user.click(screen.getByRole('button', { name: '5. Juni 2026, Status akut' }));
+    await user.click(screen.getByRole('button', { name: /Erfassen oeffnen/i }));
+    await user.click(screen.getByRole('button', { name: 'Anfall' }));
+
+    expect(onAction).toHaveBeenCalledWith('seizure', '2026-06-05');
   });
 
   it('exposes maintenance actions behind the header menu', async () => {
@@ -53,21 +65,11 @@ describe('DashboardScreen', () => {
     const onOpenKnownTerms = vi.fn();
     const onOpenExports = vi.fn();
 
-    render(
-      <DashboardScreen
-        dayStates={dayStates}
-        today="2026-06-03"
-        backupStatusLabel="Backup offen"
-        onOpenPhases={onOpenPhases}
-        onOpenKnownTerms={onOpenKnownTerms}
-        onOpenExports={onOpenExports}
-      />
-    );
+    renderDashboard({ onOpenPhases, onOpenKnownTerms, onOpenExports });
 
     expect(screen.queryByRole('button', { name: 'Phasen' })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /Menue oeffnen/i }));
-
     await user.click(screen.getByRole('button', { name: 'Phasen' }));
     expect(onOpenPhases).toHaveBeenCalled();
 
@@ -83,7 +85,7 @@ describe('DashboardScreen', () => {
   it('lets the user page through months via the calendar header', async () => {
     const user = userEvent.setup();
 
-    render(<DashboardScreen dayStates={dayStates} today="2026-06-03" backupStatusLabel="Backup offen" />);
+    renderDashboard();
 
     expect(screen.getByRole('heading', { name: 'Juni 2026' })).toBeInTheDocument();
 
@@ -134,22 +136,55 @@ describe('CalendarMonth', () => {
   });
 });
 
+function renderDashboard(overrides: Partial<Parameters<typeof DashboardScreen>[0]> = {}) {
+  const repository = overrides.repository ?? {
+    markEventDeleted: vi.fn<(id: string, deletedTime: string) => Promise<void>>().mockResolvedValue(undefined)
+  };
+
+  return render(
+    <DashboardScreen
+      appState={appState}
+      dayStates={dayStates}
+      today="2026-06-03"
+      repository={repository}
+      backupStatusLabel="Backup offen"
+      {...overrides}
+    />
+  );
+}
+
 function dayButton(label: string) {
   return within(screen.getByRole('grid', { name: 'Juni 2026' })).getByRole('button', { name: label });
 }
 
+function metricValue(summary: HTMLElement, label: string) {
+  return within(summary).getByText(label).previousSibling as HTMLElement;
+}
+
+const seizures = [
+  seizure('2026-06-02', 'light'),
+  seizure('2026-06-03', 'light', 'light-1'),
+  seizure('2026-06-03', 'light', 'light-2'),
+  seizure('2026-06-04', 'severe'),
+  seizure('2026-06-05', 'medium', 'medium-1'),
+  seizure('2026-06-05', 'medium', 'medium-2')
+];
+
+const appState: AppState = {
+  schemaVersion: SCHEMA_VERSION,
+  events: seizures,
+  mealTemplates: [],
+  knownTerms: [],
+  phases: [],
+  settings: { trackedDogName: 'Mexx' }
+};
+
 const dayStates: Record<string, DayState> = {
-  '2026-06-01': calculateDayState([], '2026-06-01'),
-  '2026-06-02': calculateDayState([seizure('2026-06-02', 'light')]),
-  '2026-06-03': calculateDayState([
-    seizure('2026-06-03', 'light', 'light-1'),
-    seizure('2026-06-03', 'light', 'light-2')
-  ]),
-  '2026-06-04': calculateDayState([seizure('2026-06-04', 'severe')]),
-  '2026-06-05': calculateDayState([
-    seizure('2026-06-05', 'medium', 'medium-1'),
-    seizure('2026-06-05', 'medium', 'medium-2')
-  ])
+  '2026-06-01': calculateDayState(seizures, '2026-06-01'),
+  '2026-06-02': calculateDayState(seizures, '2026-06-02'),
+  '2026-06-03': calculateDayState(seizures, '2026-06-03'),
+  '2026-06-04': calculateDayState(seizures, '2026-06-04'),
+  '2026-06-05': calculateDayState(seizures, '2026-06-05')
 };
 
 function seizure(date: string, severity: 'light' | 'medium' | 'severe', id = `${date}-${severity}`): TrackerEvent {

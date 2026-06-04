@@ -1,45 +1,61 @@
 import { addMonths, format, parseISO } from 'date-fns';
 import { Menu } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { DayState } from '../../domain/dayState';
-import { BackupStatus, EventType, ISODate } from '../../domain/types';
+import { calculateDayState, DayState } from '../../domain/dayState';
+import { AppState, BackupStatus, EventType, ISODate, TrackerEvent } from '../../domain/types';
 import { BottomNav } from '../components/BottomNav';
 import { CalendarMonth } from '../components/CalendarMonth';
+import { DayEventList } from '../components/DayEventList';
+
+type DashboardRepository = {
+  markEventDeleted: (eventId: string, deletedTime: string) => Promise<void>;
+};
 
 type DashboardScreenProps = {
+  appState: AppState;
   dayStates: Record<ISODate, DayState>;
   today: ISODate;
+  repository: DashboardRepository;
   backupStatus?: BackupStatus;
   backupStatusLabel?: string;
   initialMonth?: ISODate;
-  onAction?: (type: EventType) => void;
+  initialSelectedDate?: ISODate;
+  onAction?: (type: EventType, selectedDate: ISODate) => void;
+  onEditEvent?: (event: TrackerEvent) => void;
+  onReload?: () => void | Promise<void>;
   onOpenPhases?: () => void;
   onOpenKnownTerms?: () => void;
   onOpenMealTemplates?: () => void;
   onOpenExports?: () => void;
   onOpenReports?: () => void;
-  onOpenDay?: (date: ISODate) => void;
 };
 
 export function DashboardScreen({
+  appState,
   dayStates,
   today,
+  repository,
   backupStatus,
   backupStatusLabel,
   initialMonth,
+  initialSelectedDate,
   onAction,
+  onEditEvent,
+  onReload,
   onOpenPhases,
   onOpenKnownTerms,
   onOpenMealTemplates,
   onOpenExports,
-  onOpenReports,
-  onOpenDay
+  onOpenReports
 }: DashboardScreenProps) {
   const [monthDate, setMonthDate] = useState<ISODate>(
     initialMonth ?? format(parseISO(today), 'yyyy-MM-01')
   );
+  const [selectedDate, setSelectedDate] = useState<ISODate>(initialSelectedDate ?? today);
   const [menuOpen, setMenuOpen] = useState(false);
-  const todayState = dayStates[today];
+  const selectedDayState = dayStates[selectedDate] ?? calculateDayState(appState.events, selectedDate);
+  const isToday = selectedDate === today;
+  const dateLabel = isToday ? 'Heute' : formatWeekdayLongDate(parseISO(selectedDate));
 
   useEffect(() => {
     if (!menuOpen) {
@@ -63,6 +79,11 @@ export function DashboardScreen({
 
   function goToToday() {
     setMonthDate(format(parseISO(today), 'yyyy-MM-01'));
+    setSelectedDate(today);
+  }
+
+  function selectDay(date: ISODate) {
+    setSelectedDate(date);
   }
 
   function runMenuAction(action?: () => void) {
@@ -85,22 +106,22 @@ export function DashboardScreen({
               <Menu aria-hidden="true" size={22} strokeWidth={2.2} />
             </button>
             <div>
-              <p className="eyebrow">Heute</p>
+              <p className="eyebrow">{dateLabel}</p>
               <h1 id="app-title">Mexx</h1>
             </div>
           </div>
           <div
-            className={`status-pill status-pill--${todayState.colorScore}`}
-            aria-label={`Tagesstatus ${todayState.colorScore}`}
+            className={`status-pill status-pill--${selectedDayState.colorScore}`}
+            aria-label={`Tagesstatus ${selectedDayState.colorScore}`}
           >
-            {statusLabel(todayState.colorScore)}
+            {statusLabel(selectedDayState.colorScore)}
           </div>
         </section>
 
-        <section className="today-summary" aria-label="Heutige Zusammenfassung">
-          <StatusMetric label="Anfaelle" value={todayState.seizureCounts.total} />
-          <StatusMetric label="Eintraege" value={todayState.eventCounts.total} />
-          <StatusMetric label="Kot" value={todayState.stoolSummary.total} />
+        <section className="today-summary" aria-label="Tagesuebersicht">
+          <StatusMetric label="Anfaelle" value={selectedDayState.seizureCounts.total} />
+          <StatusMetric label="Eintraege" value={selectedDayState.eventCounts.total} />
+          <StatusMetric label="Kot" value={selectedDayState.stoolSummary.total} />
         </section>
 
         <p className="backup-hint">{backupStatusLabel ?? formatBackupStatus(backupStatus)}</p>
@@ -109,12 +130,22 @@ export function DashboardScreen({
           monthDate={monthDate}
           dayStates={dayStates}
           today={today}
-          onSelectDay={(date) => onOpenDay?.(date)}
+          selectedDate={selectedDate}
+          onSelectDay={selectDay}
           onPrevMonth={() => shiftMonth(-1)}
           onNextMonth={() => shiftMonth(1)}
           onJumpToToday={goToToday}
         />
 
+        <DayEventList
+          events={appState.events}
+          date={selectedDate}
+          repository={repository}
+          onEdit={(event) => onEditEvent?.(event)}
+          onChanged={async () => {
+            await onReload?.();
+          }}
+        />
       </main>
 
       {menuOpen ? (
@@ -147,7 +178,7 @@ export function DashboardScreen({
         active="dashboard"
         onDashboard={goToToday}
         onReports={() => onOpenReports?.()}
-        onCapture={(type) => onAction?.(type)}
+        onCapture={(type) => onAction?.(type, selectedDate)}
       />
     </>
   );
@@ -183,4 +214,13 @@ function formatBackupStatus(backupStatus?: BackupStatus): string {
 
 function formatLongDate(date: Date): string {
   return new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'long', year: 'numeric' }).format(date);
+}
+
+function formatWeekdayLongDate(date: Date): string {
+  return new Intl.DateTimeFormat('de-DE', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  }).format(date);
 }

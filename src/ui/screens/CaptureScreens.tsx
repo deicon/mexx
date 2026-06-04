@@ -39,6 +39,7 @@ type CaptureScreensProps = {
   appState: AppState;
   repository: CaptureRepository;
   eventToEdit?: TrackerEvent;
+  defaultDate?: string;
   onDone: () => void | Promise<void>;
   onCancel: () => void;
   now?: () => Date;
@@ -66,12 +67,16 @@ export function CaptureScreens({
   appState,
   repository,
   eventToEdit,
+  defaultDate,
   onDone,
   onCancel,
   now = () => new Date(),
   createId = () => crypto.randomUUID()
 }: CaptureScreensProps) {
-  const initialEventTime = useMemo(() => eventToEdit?.eventTime ?? now().toISOString(), [eventToEdit, now]);
+  const initialEventTime = useMemo(
+    () => eventToEdit?.eventTime ?? defaultEventTimeFor(defaultDate, now),
+    [eventToEdit, defaultDate, now]
+  );
   const [eventTime, setEventTime] = useState(toDateTimeLocalValue(new Date(initialEventTime)));
   const [eventTimeError, setEventTimeError] = useState('');
   const [note, setNote] = useState(eventToEdit && 'note' in eventToEdit ? eventToEdit.note ?? '' : '');
@@ -627,6 +632,23 @@ function optionalNote(note: string): { note?: string } {
   const trimmedNote = note.trim();
 
   return trimmedNote ? { note: trimmedNote } : {};
+}
+
+function defaultEventTimeFor(defaultDate: string | undefined, now: () => Date): string {
+  if (!defaultDate) {
+    return now().toISOString();
+  }
+
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(defaultDate);
+
+  if (!match) {
+    return now().toISOString();
+  }
+
+  const [, year, month, day] = match;
+  const noon = new Date(`${year}-${month}-${day}T12:00:00`);
+
+  return noon.toISOString();
 }
 
 export function toDateTimeLocalValue(date: Date): string {
