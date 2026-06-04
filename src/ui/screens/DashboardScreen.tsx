@@ -1,6 +1,6 @@
 import { addMonths, format, parseISO } from 'date-fns';
 import { Menu } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { calculateDayState, DayState } from '../../domain/dayState';
 import { AppState, BackupStatus, EventType, ISODate, TrackerEvent } from '../../domain/types';
 import { BottomNav } from '../components/BottomNav';
@@ -52,7 +52,16 @@ export function DashboardScreen({
     initialMonth ?? format(parseISO(today), 'yyyy-MM-01')
   );
   const [selectedDate, setSelectedDate] = useState<ISODate>(initialSelectedDate ?? today);
+  const lastInitialSelectedDate = useRef(initialSelectedDate);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (initialSelectedDate && initialSelectedDate !== lastInitialSelectedDate.current) {
+      lastInitialSelectedDate.current = initialSelectedDate;
+      setSelectedDate(initialSelectedDate);
+      setMonthDate(format(parseISO(initialSelectedDate), 'yyyy-MM-01'));
+    }
+  }, [initialSelectedDate]);
   const selectedDayState = dayStates[selectedDate] ?? calculateDayState(appState.events, selectedDate);
   const isToday = selectedDate === today;
   const dateLabel = isToday ? 'Heute' : formatWeekdayLongDate(parseISO(selectedDate));

@@ -1,6 +1,6 @@
 import { eachDayOfInterval, endOfMonth, format, parseISO, startOfMonth } from 'date-fns';
 import { useEffect, useMemo, useState } from 'react';
-import { calculateDayState, DayState } from './domain/dayState';
+import { calculateDayState, DayState, getEventCalendarDate } from './domain/dayState';
 import { AppState, EventType, ISODate } from './domain/types';
 import { trackerRepository } from './storage/repository';
 import { CaptureScreens } from './ui/screens/CaptureScreens';
@@ -28,6 +28,7 @@ export function App() {
   const [maintenanceScreen, setMaintenanceScreen] = useState<
     'phases' | 'knownTerms' | 'mealTemplates' | 'exports' | 'reports' | null
   >(null);
+  const [dashboardFocusDate, setDashboardFocusDate] = useState<ISODate | null>(null);
   const today = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
 
   useEffect(() => {
@@ -134,7 +135,12 @@ export function App() {
         repository={trackerRepository}
         onBack={() => setMaintenanceScreen(null)}
         onChanged={async () => {
-          await reloadAppState(() => true);
+          const refreshed = await reloadAppState(() => true);
+          const focus = pickFocusDate(refreshed, today);
+
+          if (focus) {
+            setDashboardFocusDate(focus);
+          }
         }}
       />
     );
@@ -157,10 +163,12 @@ export function App() {
   return (
     <DashboardScreen
       appState={loadState.state}
-      dayStates={calculateVisibleDayStates(loadState.state, today)}
+      dayStates={calculateVisibleDayStates(loadState.state, today, dashboardFocusDate)}
       today={today}
       repository={trackerRepository}
       backupStatus={loadState.state.settings.backupStatus}
+      initialSelectedDate={dashboardFocusDate ?? undefined}
+      initialMonth={dashboardFocusDate ? format(parseISO(dashboardFocusDate), 'yyyy-MM-01') : undefined}
       onAction={(type, selectedDate) => setCaptureRequest({ type, defaultDate: selectedDate })}
       onEditEvent={setEventToEdit}
       onReload={async () => {
@@ -174,23 +182,32 @@ export function App() {
     />
   );
 
-  async function reloadAppState(isActive: () => boolean) {
+  async function reloadAppState(isActive: () => boolean): Promise<AppState | null> {
     try {
       const state = await trackerRepository.loadAppState();
 
       if (isActive()) {
         setLoadState({ status: 'ready', state });
       }
+
+      return state;
     } catch (error: unknown) {
       if (isActive()) {
         setLoadState({ status: 'error', message: error instanceof Error ? error.message : 'App konnte nicht laden' });
       }
+
+      return null;
     }
   }
 }
 
-function calculateVisibleDayStates(state: AppState, today: ISODate): Record<ISODate, DayState> {
-  const monthStart = startOfMonth(parseISO(today));
+function calculateVisibleDayStates(
+  state: AppState,
+  today: ISODate,
+  focusDate: ISODate | null
+): Record<ISODate, DayState> {
+  const referenceDate = focusDate ?? today;
+  const monthStart = startOfMonth(parseISO(referenceDate));
   const monthEnd = endOfMonth(monthStart);
 
   return Object.fromEntries(
@@ -200,4 +217,20 @@ function calculateVisibleDayStates(state: AppState, today: ISODate): Record<ISOD
       return [date, calculateDayState(state.events, date)];
     })
   );
+}
+
+function pickFocusDate(state: AppState | null, today: ISODate): ISODate | null {
+  if (!state) {
+    return null;
+  }
+
+  const activeEventDates = state.events
+    .filter((event) => event.deleted !== true)
+    .map((event) => getEventCalendarDate(event.eventTime));
+
+  if (activeEventDates.includes(today)) {
+    return today;
+  }
+
+  return activeEventDates.sort().pop() ?? null;
 }

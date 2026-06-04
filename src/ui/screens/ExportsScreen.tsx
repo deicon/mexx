@@ -45,6 +45,12 @@ type DayImportSummary = {
   deleted: number;
 };
 
+type BackupImportSummary = {
+  events: number;
+  phases: number;
+  mealTemplates: number;
+};
+
 export function ExportsScreen({
   appState,
   repository,
@@ -58,6 +64,7 @@ export function ExportsScreen({
   const [backupError, setBackupError] = useState<string>('');
   const [dayError, setDayError] = useState<string>('');
   const [dayImportSummary, setDayImportSummary] = useState<DayImportSummary | null>(null);
+  const [backupImportSummary, setBackupImportSummary] = useState<BackupImportSummary | null>(null);
   const [dayExportDate, setDayExportDate] = useState<ISODate>('');
   const [working, setWorking] = useState(false);
 
@@ -79,6 +86,7 @@ export function ExportsScreen({
     const file = event.target.files?.[0];
     setBackupError('');
     setBackupPreview(null);
+    setBackupImportSummary(null);
 
     if (!file) {
       return;
@@ -105,6 +113,11 @@ export function ExportsScreen({
       const newState = applyBackupImport(appState, backupPreview.payload);
       await repository.replaceAppState(newState);
       await onChanged();
+      setBackupImportSummary({
+        events: newState.events.filter((event) => event.deleted !== true).length,
+        phases: newState.phases.length,
+        mealTemplates: newState.mealTemplates.length
+      });
       setBackupPreview(null);
     } finally {
       setWorking(false);
@@ -225,6 +238,12 @@ export function ExportsScreen({
               Backup-Import bestaetigen
             </button>
           </article>
+        ) : null}
+        {backupImportSummary ? (
+          <p className="import-success" role="status" aria-live="polite">
+            Backup importiert: {backupImportSummary.events} Ereignisse,{' '}
+            {backupImportSummary.phases} Phasen, {backupImportSummary.mealTemplates} Futtervorlagen.
+          </p>
         ) : null}
       </section>
 
