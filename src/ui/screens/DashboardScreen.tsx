@@ -28,6 +28,7 @@ type DashboardScreenProps = {
   onOpenMealTemplates?: () => void;
   onOpenExports?: () => void;
   onOpenReports?: () => void;
+  onRefreshApp?: () => void | Promise<void>;
 };
 
 export function DashboardScreen({
@@ -46,7 +47,8 @@ export function DashboardScreen({
   onOpenKnownTerms,
   onOpenMealTemplates,
   onOpenExports,
-  onOpenReports
+  onOpenReports,
+  onRefreshApp = defaultRefreshApp
 }: DashboardScreenProps) {
   const [monthDate, setMonthDate] = useState<ISODate>(
     initialMonth ?? format(parseISO(today), 'yyyy-MM-01')
@@ -179,6 +181,13 @@ export function DashboardScreen({
             <button className="app-menu__item" type="button" onClick={() => runMenuAction(onOpenExports)}>
               Daten
             </button>
+            <button
+              className="app-menu__item"
+              type="button"
+              onClick={() => runMenuAction(() => void onRefreshApp())}
+            >
+              Aktualisieren
+            </button>
           </nav>
         </div>
       ) : null}
@@ -232,4 +241,21 @@ function formatWeekdayLongDate(date: Date): string {
     month: 'long',
     year: 'numeric'
   }).format(date);
+}
+
+async function defaultRefreshApp(): Promise<void> {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  if ('serviceWorker' in navigator) {
+    try {
+      const registration = await navigator.serviceWorker.getRegistration();
+      await registration?.update();
+    } catch {
+      // Refresh continues even if the SW check fails.
+    }
+  }
+
+  window.location.reload();
 }

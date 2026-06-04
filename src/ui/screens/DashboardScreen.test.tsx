@@ -82,6 +82,18 @@ describe('DashboardScreen', () => {
     expect(onOpenExports).toHaveBeenCalled();
   });
 
+  it('runs the refresh action when the Aktualisieren menu item is tapped', async () => {
+    const user = userEvent.setup();
+    const onRefreshApp = vi.fn().mockResolvedValue(undefined);
+
+    renderDashboard({ onRefreshApp });
+
+    await user.click(screen.getByRole('button', { name: /Menue oeffnen/i }));
+    await user.click(screen.getByRole('button', { name: 'Aktualisieren' }));
+
+    expect(onRefreshApp).toHaveBeenCalledTimes(1);
+  });
+
   it('lets the user page through months via the calendar header', async () => {
     const user = userEvent.setup();
 
