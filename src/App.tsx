@@ -8,6 +8,7 @@ import { DashboardScreen } from './ui/screens/DashboardScreen';
 import { DayDetailScreen } from './ui/screens/DayDetailScreen';
 import { ExportsScreen } from './ui/screens/ExportsScreen';
 import { KnownTermsScreen } from './ui/screens/KnownTermsScreen';
+import { MealTemplatesScreen } from './ui/screens/MealTemplatesScreen';
 import { PhasesScreen } from './ui/screens/PhasesScreen';
 import { ReportsScreen } from './ui/screens/ReportsScreen';
 
@@ -22,7 +23,7 @@ export function App() {
   const [selectedDayDetailDate, setSelectedDayDetailDate] = useState<ISODate | null>(null);
   const [eventToEdit, setEventToEdit] = useState<AppState['events'][number] | null>(null);
   const [maintenanceScreen, setMaintenanceScreen] = useState<
-    'phases' | 'knownTerms' | 'exports' | 'reports' | null
+    'phases' | 'knownTerms' | 'mealTemplates' | 'exports' | 'reports' | null
   >(null);
   const today = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
 
@@ -124,6 +125,19 @@ export function App() {
     );
   }
 
+  if (maintenanceScreen === 'mealTemplates') {
+    return (
+      <MealTemplatesScreen
+        mealTemplates={loadState.state.mealTemplates}
+        repository={trackerRepository}
+        onBack={() => setMaintenanceScreen(null)}
+        onChanged={async () => {
+          await reloadAppState(() => true);
+        }}
+      />
+    );
+  }
+
   if (maintenanceScreen === 'exports') {
     return (
       <ExportsScreen
@@ -159,6 +173,7 @@ export function App() {
       onAction={setCaptureType}
       onOpenPhases={() => setMaintenanceScreen('phases')}
       onOpenKnownTerms={() => setMaintenanceScreen('knownTerms')}
+      onOpenMealTemplates={() => setMaintenanceScreen('mealTemplates')}
       onOpenExports={() => setMaintenanceScreen('exports')}
       onOpenReports={() => setMaintenanceScreen('reports')}
       onOpenDay={setSelectedDayDetailDate}

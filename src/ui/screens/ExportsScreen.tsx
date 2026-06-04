@@ -186,9 +186,9 @@ export function ExportsScreen({
 
       <section className="report-section" aria-labelledby="backup-export-title">
         <h2 id="backup-export-title">Backup-Export</h2>
-        <p className="form-hint">Speichert alle Daten als JSON-Datei.</p>
+        <p className="form-hint">Oeffnet das Teilen-Menue mit der JSON-Datei.</p>
         <button className="primary-button" type="button" onClick={() => void handleBackupExport()} disabled={working}>
-          Backup exportieren
+          Backup teilen
         </button>
       </section>
 
@@ -245,7 +245,7 @@ export function ExportsScreen({
           onClick={() => void handleDayExport()}
           disabled={working || !dayExportDate}
         >
-          Tag exportieren
+          Tag teilen
         </button>
       </section>
 
@@ -366,8 +366,23 @@ function defaultDownloadFile(filename: string, content: string, mimeType: string
     return;
   }
 
-  const blob = new Blob([content], { type: mimeType });
-  const url = URL.createObjectURL(blob);
+  const file = new File([content], filename, { type: mimeType });
+  const shareData = { files: [file], title: filename } satisfies ShareData;
+  const shareNavigator = navigator as Navigator & {
+    canShare?: (data?: ShareData) => boolean;
+    share?: (data?: ShareData) => Promise<void>;
+  };
+
+  if (shareNavigator.canShare?.(shareData) && shareNavigator.share) {
+    shareNavigator.share(shareData).catch(() => downloadBlob(file, filename));
+    return;
+  }
+
+  downloadBlob(file, filename);
+}
+
+function downloadBlob(file: Blob, filename: string): void {
+  const url = URL.createObjectURL(file);
   const link = document.createElement('a');
 
   link.href = url;

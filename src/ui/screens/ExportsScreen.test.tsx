@@ -40,7 +40,7 @@ describe('ExportsScreen', () => {
       />
     );
 
-    await user.click(screen.getByRole('button', { name: /Backup exportieren/i }));
+    await user.click(screen.getByRole('button', { name: /Backup teilen/i }));
 
     expect(downloadFile).toHaveBeenCalledTimes(1);
     const [filename, content, mime] = downloadFile.mock.calls[0];
@@ -119,7 +119,7 @@ describe('ExportsScreen', () => {
     );
 
     await user.type(screen.getByLabelText(/Tag fuer Tagesexport/i), '2026-06-03');
-    await user.click(screen.getByRole('button', { name: /Tag exportieren/i }));
+    await user.click(screen.getByRole('button', { name: /Tag teilen/i }));
 
     expect(downloadFile).toHaveBeenCalledTimes(1);
     const [filename, content] = downloadFile.mock.calls[0];

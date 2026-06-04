@@ -15,6 +15,7 @@ type DashboardScreenProps = {
   onAction?: (type: EventType) => void;
   onOpenPhases?: () => void;
   onOpenKnownTerms?: () => void;
+  onOpenMealTemplates?: () => void;
   onOpenExports?: () => void;
   onOpenReports?: () => void;
   onOpenDay?: (date: ISODate) => void;
@@ -29,6 +30,7 @@ export function DashboardScreen({
   onAction,
   onOpenPhases,
   onOpenKnownTerms,
+  onOpenMealTemplates,
   onOpenExports,
   onOpenReports,
   onOpenDay
@@ -127,6 +129,9 @@ export function DashboardScreen({
             <p className="eyebrow app-menu__eyebrow">Pflege</p>
             <button className="app-menu__item" type="button" onClick={() => runMenuAction(onOpenPhases)}>
               Phasen
+            </button>
+            <button className="app-menu__item" type="button" onClick={() => runMenuAction(onOpenMealTemplates)}>
+              Futtervorlagen
             </button>
             <button className="app-menu__item" type="button" onClick={() => runMenuAction(onOpenKnownTerms)}>
               Begriffe
