@@ -5,23 +5,23 @@ import { KnownTerm } from './types';
 describe('known term helpers', () => {
   it('learns new terms and increments existing terms without changing identity', () => {
     const existing: KnownTerm = {
-      id: 'term-food-chicken',
-      kind: 'food-name',
-      value: 'Chicken',
+      id: 'term-therapy-krankenhaus',
+      kind: 'therapy-tag',
+      value: 'Krankenhaus',
       lastUsedTime: '2026-06-01T08:00:00.000Z',
       useCount: 2
     };
 
-    expect(learnKnownTerm([existing], 'food-name', 'Chicken', '2026-06-02T08:00:00.000Z', () => 'unused')).toEqual({
+    expect(learnKnownTerm([existing], 'therapy-tag', 'Krankenhaus', '2026-06-02T08:00:00.000Z', () => 'unused')).toEqual({
       ...existing,
       lastUsedTime: '2026-06-02T08:00:00.000Z',
       useCount: 3
     });
 
-    expect(learnKnownTerm([existing], 'food-name', 'Turkey', '2026-06-02T08:00:00.000Z', () => 'term-food-turkey')).toEqual({
-      id: 'term-food-turkey',
-      kind: 'food-name',
-      value: 'Turkey',
+    expect(learnKnownTerm([existing], 'therapy-tag', 'Pflegeheim', '2026-06-02T08:00:00.000Z', () => 'term-therapy-pflegeheim')).toEqual({
+      id: 'term-therapy-pflegeheim',
+      kind: 'therapy-tag',
+      value: 'Pflegeheim',
       lastUsedTime: '2026-06-02T08:00:00.000Z',
       useCount: 1
     });
@@ -29,15 +29,15 @@ describe('known term helpers', () => {
 
   it('suggests similar terms by kind without automatic merging', () => {
     const terms: KnownTerm[] = [
-      { id: 'term-1', kind: 'food-name', value: 'Chicken', useCount: 3 },
-      { id: 'term-2', kind: 'food-name', value: 'Chiken', useCount: 1 },
-      { id: 'term-3', kind: 'dose-name', value: 'Chicken', useCount: 2 },
-      { id: 'term-4', kind: 'food-name', value: 'Beef', useCount: 4 }
+      { id: 'term-1', kind: 'therapy-tag', value: 'Krankenhaus', useCount: 3 },
+      { id: 'term-2', kind: 'therapy-tag', value: 'Krankenhausz', useCount: 1 },
+      { id: 'term-3', kind: 'trigger-tag', value: 'Krankenhaus', useCount: 2 },
+      { id: 'term-4', kind: 'therapy-tag', value: 'Station', useCount: 4 }
     ];
 
     expect(suggestSimilarKnownTerms(terms)).toEqual([
       {
-        kind: 'food-name',
+        kind: 'therapy-tag',
         terms: [terms[0], terms[1]]
       }
     ]);

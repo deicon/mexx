@@ -170,6 +170,7 @@ function SeizureForm({
     }
 
     const changeTime = now().toISOString();
+    const exactDurationValue = parseOptionalPositiveNumber(exactDuration);
     const seizure: SeizureEvent = {
       id: editEvent?.id ?? createId(),
       type: 'seizure',
@@ -178,8 +179,8 @@ function SeizureForm({
       changeTime,
       severity,
       durationClass,
-      ...(parseOptionalPositiveNumber(exactDuration)
-        ? { exactDuration: { value: parseOptionalPositiveNumber(exactDuration), unit: 'seconds' } }
+      ...(exactDurationValue !== undefined
+        ? { exactDuration: { value: exactDurationValue, unit: 'seconds' } }
         : {}),
       triggerTags: triggers,
       ...optionalNote(note)
@@ -304,6 +305,7 @@ function TherapyDogForm({
     }
 
     const changeTime = now().toISOString();
+    const durationValue = parseOptionalPositiveNumber(durationMinutes);
     const therapyDog: TherapyDogEvent = {
       id: editEvent?.id ?? createId(),
       type: 'therapy_dog',
@@ -311,9 +313,7 @@ function TherapyDogForm({
       captureTime: editEvent?.captureTime ?? changeTime,
       changeTime,
       intensity,
-      ...(parseOptionalPositiveNumber(durationMinutes)
-        ? { durationMinutes: parseOptionalPositiveNumber(durationMinutes) }
-        : {}),
+      ...(durationValue !== undefined ? { durationMinutes: durationValue } : {}),
       tags,
       ...optionalNote(note)
     };
@@ -434,15 +434,15 @@ export function localDateTimeToIso(value: string): string | null {
   return date.toISOString();
 }
 
-function parseOptionalPositiveNumber(value: string): number | null {
+function parseOptionalPositiveNumber(value: string): number | undefined {
   if (!value.trim()) {
-    return null;
+    return undefined;
   }
 
   const parsed = Number(value);
 
   if (!Number.isFinite(parsed) || parsed < 0) {
-    return null;
+    return undefined;
   }
 
   return parsed;
