@@ -6,11 +6,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   appStateFixture,
   deletedObservationFixture,
-  doseFixture,
-  mealFixture,
   observationFixture,
   seizureFixture,
-  stoolFixture
+  therapyDogFixture
 } from '../../domain/fixtures';
 import { TrackerEvent } from '../../domain/types';
 import { DayEventList } from './DayEventList';
@@ -25,10 +23,8 @@ describe('DayEventList', () => {
       events: [
         observationFixture,
         { ...deletedObservationFixture, note: 'Deleted observation should stay hidden.' },
-        stoolFixture,
-        seizureFixture,
-        doseFixture,
-        mealFixture
+        therapyDogFixture,
+        seizureFixture
       ]
     });
 
@@ -36,10 +32,8 @@ describe('DayEventList', () => {
 
     expect(cards.map((card) => within(card).getByRole('heading').textContent)).toEqual([
       'Anfall',
-      'Mahlzeit',
-      'Gabe',
-      'Kot',
-      'Beobachtung'
+      'Beobachtung',
+      'Therapiehund'
     ]);
     expect(screen.queryByText('Deleted observation should stay hidden.')).not.toBeInTheDocument();
   });
@@ -72,9 +66,9 @@ describe('DayEventList', () => {
 
     renderList({ onEdit });
 
-    await user.click(screen.getByRole('button', { name: 'Mahlzeit um 11:00 bearbeiten' }));
+    await user.click(screen.getByRole('button', { name: 'Therapiehund um 16:00 bearbeiten' }));
 
-    expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ id: mealFixture.id }));
+    expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ id: therapyDogFixture.id }));
   });
 
   it('soft-deletes via the repository and notifies the parent', async () => {
@@ -86,10 +80,10 @@ describe('DayEventList', () => {
 
     renderList({ repository, onChanged });
 
-    await user.click(screen.getByRole('button', { name: 'Kot um 12:15 loeschen' }));
+    await user.click(screen.getByRole('button', { name: 'Beobachtung um 14:00 loeschen' }));
 
     await waitFor(() => expect(repository.markEventDeleted).toHaveBeenCalledTimes(1));
-    expect(repository.markEventDeleted).toHaveBeenCalledWith(stoolFixture.id, '2026-06-03T18:30:00.000Z');
+    expect(repository.markEventDeleted).toHaveBeenCalledWith(observationFixture.id, '2026-06-03T18:30:00.000Z');
     expect(onChanged).toHaveBeenCalledTimes(1);
   });
 });

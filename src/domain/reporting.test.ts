@@ -1,12 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   appStateFixture,
-  doseFixture,
-  mealFixture,
   observationFixture,
   phaseFixture,
   seizureFixture,
-  stoolFixture
+  therapyDogFixture
 } from './fixtures';
 import {
   buildClinicalReport,
@@ -19,7 +17,6 @@ import { AppState, SCHEMA_VERSION, SeizureEvent, TrackerEvent } from './types';
 const emptyAppState: AppState = {
   schemaVersion: SCHEMA_VERSION,
   events: [],
-  mealTemplates: [],
   knownTerms: [],
   phases: [],
   settings: { trackedDogName: 'Mexx' }
@@ -80,8 +77,8 @@ describe('calculateCorrelations', () => {
   it('classifies preceding events into 0-6h, 6-24h, and 24-72h windows', () => {
     const events: TrackerEvent[] = [
       baseSeizure,
-      { ...mealFixture, id: 'meal-near', eventTime: '2026-06-03T10:00:00.000Z' },
-      { ...doseFixture, id: 'dose-medium', eventTime: '2026-06-02T20:00:00.000Z' },
+      { ...therapyDogFixture, id: 'therapy-near', eventTime: '2026-06-03T10:00:00.000Z' },
+      { ...observationFixture, id: 'observation-medium', eventTime: '2026-06-02T20:00:00.000Z' },
       { ...observationFixture, id: 'observation-far', eventTime: '2026-06-02T01:00:00.000Z' }
     ];
 
@@ -94,8 +91,8 @@ describe('calculateCorrelations', () => {
     const entry = correlations[0];
 
     expect(entry.seizureId).toBe(baseSeizure.id);
-    expect(entry.precedingByWindow['0-6h'].map((item) => item.event.id)).toEqual(['meal-near']);
-    expect(entry.precedingByWindow['6-24h'].map((item) => item.event.id)).toEqual(['dose-medium']);
+    expect(entry.precedingByWindow['0-6h'].map((item) => item.event.id)).toEqual(['therapy-near']);
+    expect(entry.precedingByWindow['6-24h'].map((item) => item.event.id)).toEqual(['observation-medium']);
     expect(entry.precedingByWindow['24-72h'].map((item) => item.event.id)).toEqual(['observation-far']);
   });
 
@@ -120,8 +117,8 @@ describe('calculateCorrelations', () => {
     const events: TrackerEvent[] = [
       baseSeizure,
       {
-        ...mealFixture,
-        id: 'meal-deleted',
+        ...therapyDogFixture,
+        id: 'therapy-deleted',
         eventTime: '2026-06-03T10:00:00.000Z',
         deleted: true,
         deletedTime: '2026-06-03T11:00:00.000Z'
@@ -158,10 +155,8 @@ describe('buildClinicalReport', () => {
     expect(report.generatedAt).toBe('2026-06-03T20:00:00.000Z');
     expect(report.dayStates.map((dayState) => dayState.date)).toEqual(['2026-06-01', '2026-06-02', '2026-06-03']);
     expect(report.totals.seizures).toBe(1);
-    expect(report.totals.meals).toBe(1);
-    expect(report.totals.stools).toBe(1);
-    expect(report.totals.doses).toBe(1);
     expect(report.totals.observations).toBe(1);
+    expect(report.totals.therapyDogs).toBe(1);
   });
 
   it('includes phases overlapping with the period only', () => {
@@ -197,7 +192,7 @@ describe('buildClinicalReport', () => {
       ...emptyAppState,
       events: [
         seizureFixture,
-        { ...mealFixture, deleted: true, deletedTime: '2026-06-03T10:30:00.000Z' }
+        { ...observationFixture, deleted: true, deletedTime: '2026-06-03T10:30:00.000Z' }
       ]
     };
 
@@ -206,7 +201,7 @@ describe('buildClinicalReport', () => {
       generatedAt: '2026-06-03T20:00:00.000Z'
     });
 
-    expect(report.totals.meals).toBe(0);
+    expect(report.totals.observations).toBe(0);
     expect(report.correlations[0]?.precedingByWindow['0-6h']).toEqual([]);
   });
 });
@@ -228,19 +223,19 @@ describe('buildCsvPackage', () => {
     const idColumn = events.rows.map((row) => row[0]);
 
     expect(idColumn).toEqual(
-      expect.arrayContaining([seizureFixture.id, mealFixture.id, stoolFixture.id, doseFixture.id, observationFixture.id])
+      expect.arrayContaining([seizureFixture.id, observationFixture.id, therapyDogFixture.id])
     );
     expect(idColumn).not.toContain('event-observation-deleted-1');
   });
 
-  it('writes detail rows including food components for meals', () => {
+  it('writes detail rows including therapy dog intensity and tags', () => {
     const details = csvPackage.files.find((file) => file.name === 'event-details.csv')!;
 
     expect(details.header).toContain('eventId');
     expect(details.header).toContain('detailType');
-    const mealDetailRows = details.rows.filter((row) => row[details.header.indexOf('eventId')] === mealFixture.id);
+    const therapyDogDetailRows = details.rows.filter((row) => row[details.header.indexOf('eventId')] === therapyDogFixture.id);
 
-    expect(mealDetailRows.length).toBe(mealFixture.foodComponents.length);
+    expect(therapyDogDetailRows.length).toBeGreaterThanOrEqual(1);
   });
 
   it('writes one day-state row per calendar day in the period', () => {

@@ -49,87 +49,33 @@ describe('CaptureScreens', () => {
     );
   });
 
-  it('prefills a meal from a template and saves food components with eaten as default status', async () => {
+  it('captures a therapy dog appointment with intensity, duration, tags, and note', async () => {
     const user = userEvent.setup();
     const repository = createRepository();
 
-    renderCapture('meal', repository);
+    renderCapture('therapy_dog', repository);
 
-    await user.selectOptions(screen.getByLabelText('Vorlage'), 'meal-template-breakfast');
-    expect(screen.getByLabelText('Futter 1 Name')).toHaveValue('Chicken');
-    expect(screen.getByLabelText('Futter 1 Menge')).toHaveValue(120);
-    expect(screen.getByLabelText('Futter 2 Name')).toHaveValue('Broth');
-
+    await user.selectOptions(screen.getByLabelText('Intensitaet'), 'heavy');
+    await user.clear(screen.getByLabelText('Dauer in Minuten'));
+    await user.type(screen.getByLabelText('Dauer in Minuten'), '90');
+    await user.type(screen.getByLabelText('Neue Kategorie'), 'Pflegeheim');
+    await user.click(screen.getByRole('button', { name: 'Hinzufuegen' }));
+    await user.type(screen.getByLabelText('Notiz'), 'Sehr anstrengender Tag.');
     await user.click(screen.getByRole('button', { name: 'Speichern' }));
 
     await waitFor(() => expect(repository.upsertEvent).toHaveBeenCalledTimes(1));
     expect(repository.upsertEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 'event-1',
-        type: 'meal',
-        mealTemplateId: 'meal-template-breakfast',
-        consumptionStatus: 'eaten',
-        foodComponents: [
-          { name: 'Chicken', consumedAmount: 120, unit: 'g' },
-          { name: 'Broth', consumedAmount: 30, unit: 'ml' }
-        ]
-      })
-    );
-  });
-
-  it('captures stool quality, flags, and an optional note', async () => {
-    const user = userEvent.setup();
-    const repository = createRepository();
-
-    renderCapture('stool', repository);
-
-    await user.selectOptions(screen.getByLabelText('Kotqualitaet'), 'diarrhea');
-    await user.click(screen.getByRole('button', { name: 'mucus' }));
-    await user.type(screen.getByLabelText('Notiz'), 'Sehr weich am Abend.');
-    await user.click(screen.getByRole('button', { name: 'Speichern' }));
-
-    await waitFor(() => expect(repository.upsertEvent).toHaveBeenCalledTimes(1));
-    expect(repository.upsertEvent).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: 'event-1',
-        type: 'stool',
-        quality: 'diarrhea',
-        stoolFlags: ['mucus'],
-        note: 'Sehr weich am Abend.'
-      })
-    );
-  });
-
-  it('captures a dose category, amount, unit, associated meal, and note', async () => {
-    const user = userEvent.setup();
-    const repository = createRepository();
-
-    renderCapture('dose', repository);
-
-    await user.selectOptions(screen.getByLabelText('Kategorie'), 'medication');
-    await user.type(screen.getByLabelText('Name'), 'Keppra');
-    await user.clear(screen.getByLabelText('Menge'));
-    await user.type(screen.getByLabelText('Menge'), '1.5');
-    await user.selectOptions(screen.getByLabelText('Einheit'), 'tablet');
-    await user.selectOptions(screen.getByLabelText('Zugehoerige Mahlzeit'), 'event-meal-1');
-    await user.type(screen.getByLabelText('Notiz'), 'Mit Fruehstueck gegeben.');
-    await user.click(screen.getByRole('button', { name: 'Speichern' }));
-
-    await waitFor(() => expect(repository.upsertEvent).toHaveBeenCalledTimes(1));
-    expect(repository.upsertEvent).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: 'event-1',
-        type: 'dose',
-        category: 'medication',
-        name: 'Keppra',
-        administeredAmount: 1.5,
-        unit: 'tablet',
-        associatedMealId: 'event-meal-1',
-        note: 'Mit Fruehstueck gegeben.'
+        type: 'therapy_dog',
+        intensity: 'heavy',
+        durationMinutes: 90,
+        tags: ['Pflegeheim'],
+        note: 'Sehr anstrengender Tag.'
       })
     );
     expect(repository.saveKnownTerm).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'term-1', kind: 'dose-name', value: 'Keppra' })
+      expect.objectContaining({ id: 'term-1', kind: 'therapy-tag', value: 'Pflegeheim', useCount: 1 })
     );
   });
 

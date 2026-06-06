@@ -5,7 +5,6 @@ import {
   BackupStatus,
   EventId,
   KnownTerm,
-  MealTemplate,
   Phase,
   SCHEMA_VERSION,
   TrackerEvent
@@ -26,7 +25,6 @@ export type TrackerRepository = {
   replaceAppState: (state: AppState) => Promise<void>;
   upsertEvent: (event: TrackerEvent) => Promise<void>;
   markEventDeleted: (eventId: EventId, deletedTime: string) => Promise<void>;
-  saveMealTemplate: (mealTemplate: MealTemplate) => Promise<void>;
   saveKnownTerm: (knownTerm: KnownTerm) => Promise<void>;
   savePhase: (phase: Phase) => Promise<void>;
   saveBackupStatus: (backupStatus: BackupStatus) => Promise<void>;
@@ -34,9 +32,8 @@ export type TrackerRepository = {
 
 export const createTrackerRepository = (db: TrackerDatabase): TrackerRepository => ({
   async loadAppState() {
-    const [events, mealTemplates, knownTerms, phases, settingsRecord, backupMetadataRecord] = await Promise.all([
+    const [events, knownTerms, phases, settingsRecord, backupMetadataRecord] = await Promise.all([
       orderedValues(db.events),
-      orderedValues(db.mealTemplates),
       orderedValues(db.knownTerms),
       orderedValues(db.phases),
       db.settings.get(APP_SETTINGS_KEY),
@@ -51,7 +48,6 @@ export const createTrackerRepository = (db: TrackerDatabase): TrackerRepository 
     return {
       schemaVersion: SCHEMA_VERSION,
       events,
-      mealTemplates,
       knownTerms,
       phases,
       settings
@@ -61,11 +57,10 @@ export const createTrackerRepository = (db: TrackerDatabase): TrackerRepository 
   async replaceAppState(state) {
     await db.transaction(
       'rw',
-      [db.events, db.mealTemplates, db.knownTerms, db.phases, db.settings, db.backupMetadata],
+      [db.events, db.knownTerms, db.phases, db.settings, db.backupMetadata],
       async () => {
         await Promise.all([
           db.events.clear(),
-          db.mealTemplates.clear(),
           db.knownTerms.clear(),
           db.phases.clear(),
           db.settings.clear(),
@@ -74,7 +69,6 @@ export const createTrackerRepository = (db: TrackerDatabase): TrackerRepository 
 
         await Promise.all([
           db.events.bulkPut(withStorageOrder(state.events)),
-          db.mealTemplates.bulkPut(withStorageOrder(state.mealTemplates)),
           db.knownTerms.bulkPut(withStorageOrder(state.knownTerms)),
           db.phases.bulkPut(withStorageOrder(state.phases)),
           db.settings.put({
@@ -113,10 +107,6 @@ export const createTrackerRepository = (db: TrackerDatabase): TrackerRepository 
         deletedTime
       });
     });
-  },
-
-  async saveMealTemplate(mealTemplate) {
-    await putPreservingStorageOrder(db.mealTemplates, mealTemplate);
   },
 
   async saveKnownTerm(knownTerm) {

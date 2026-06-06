@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { mealFixture, seizureFixture, stoolFixture } from './fixtures';
+import { observationFixture, seizureFixture, therapyDogFixture } from './fixtures';
 import { calculateDayState } from './dayState';
-import { SeizureEvent, StoolEvent, TrackerEvent } from './types';
+import { SeizureEvent, TherapyDogEvent, TrackerEvent } from './types';
 
 describe('calculateDayState', () => {
   it('returns green with no active seizures', () => {
-    expect(calculateDayState([mealFixture], '2026-06-03').colorScore).toBe('green');
+    expect(calculateDayState([observationFixture], '2026-06-03').colorScore).toBe('green');
   });
 
   it('returns yellow with one light seizure', () => {
@@ -41,8 +41,8 @@ describe('calculateDayState', () => {
     expect(calculateDayState(events).colorScore).toBe('red');
   });
 
-  it('does not let stool quality affect color score', () => {
-    const events = [stool({ quality: 'diarrhea' })];
+  it('does not let therapy dog events affect color score', () => {
+    const events = [therapyDog({ intensity: 'heavy' })];
 
     expect(calculateDayState(events).colorScore).toBe('green');
   });
@@ -51,7 +51,7 @@ describe('calculateDayState', () => {
     const events: TrackerEvent[] = [
       seizure({ id: 'deleted-severe', severity: 'severe', deleted: true }),
       seizure({ id: 'active-light', severity: 'light' }),
-      stool({ id: 'deleted-stool', quality: 'diarrhea', deleted: true })
+      therapyDog({ id: 'deleted-therapy', intensity: 'heavy', deleted: true })
     ];
 
     expect(calculateDayState(events)).toMatchObject({
@@ -62,17 +62,12 @@ describe('calculateDayState', () => {
         medium: 0,
         severe: 0
       },
-      stoolSummary: {
-        total: 0,
-        byQuality: {
-          diarrhea: 0
-        }
-      },
       eventCounts: {
         total: 1,
         byType: {
           seizure: 1,
-          stool: 0
+          observation: 0,
+          therapy_dog: 0
         }
       }
     });
@@ -86,10 +81,10 @@ describe('calculateDayState', () => {
         eventTime: '2026-06-05T08:00:00.000Z',
         deleted: true
       }),
-      stool({
-        id: 'deleted-cross-date-stool',
+      therapyDog({
+        id: 'deleted-cross-date-therapy',
         eventTime: '2026-06-05T09:00:00.000Z',
-        quality: 'diarrhea',
+        intensity: 'heavy',
         deleted: true
       }),
       seizure({
@@ -107,17 +102,12 @@ describe('calculateDayState', () => {
         light: 1,
         severe: 0
       },
-      stoolSummary: {
-        total: 0,
-        byQuality: {
-          diarrhea: 0
-        }
-      },
       eventCounts: {
         total: 1,
         byType: {
           seizure: 1,
-          stool: 0
+          observation: 0,
+          therapy_dog: 0
         }
       }
     });
@@ -135,14 +125,14 @@ describe('calculateDayState', () => {
         severity: 'severe',
         eventTime: '2026-06-05T08:00:00.000Z'
       }),
-      stool({
-        id: 'requested-day-stool',
-        quality: 'normal',
+      therapyDog({
+        id: 'requested-day-therapy',
+        intensity: 'medium',
         eventTime: '2026-06-04T09:00:00.000Z'
       }),
-      stool({
-        id: 'other-day-stool',
-        quality: 'diarrhea',
+      therapyDog({
+        id: 'other-day-therapy',
+        intensity: 'heavy',
         eventTime: '2026-06-05T09:00:00.000Z'
       })
     ];
@@ -155,18 +145,12 @@ describe('calculateDayState', () => {
         light: 1,
         severe: 0
       },
-      stoolSummary: {
-        total: 1,
-        byQuality: {
-          normal: 1,
-          diarrhea: 0
-        }
-      },
       eventCounts: {
         total: 2,
         byType: {
           seizure: 1,
-          stool: 1
+          observation: 0,
+          therapy_dog: 1
         }
       }
     });
@@ -175,7 +159,7 @@ describe('calculateDayState', () => {
   it('returns date from eventTime when all provided events are for one day', () => {
     const state = calculateDayState([
       seizure({ eventTime: '2026-06-04T08:55:00.000Z' }),
-      stool({ eventTime: '2026-06-04T05:00:00.000Z' })
+      therapyDog({ eventTime: '2026-06-04T05:00:00.000Z' })
     ]);
 
     expect(state.date).toBe('2026-06-04');
@@ -190,9 +174,6 @@ describe('calculateDayState', () => {
       date: '2026-06-05',
       colorScore: 'green',
       seizureCounts: {
-        total: 0
-      },
-      stoolSummary: {
         total: 0
       },
       eventCounts: {
@@ -228,7 +209,7 @@ describe('calculateDayState', () => {
 type SeizureOverrides = Partial<Omit<SeizureEvent, 'deleted' | 'deletedTime'>> &
   ({ deleted: true; deletedTime?: string } | { deleted?: false; deletedTime?: never });
 
-type StoolOverrides = Partial<Omit<StoolEvent, 'deleted' | 'deletedTime'>> &
+type TherapyDogOverrides = Partial<Omit<TherapyDogEvent, 'deleted' | 'deletedTime'>> &
   ({ deleted: true; deletedTime?: string } | { deleted?: false; deletedTime?: never });
 
 function seizure(overrides: SeizureOverrides = {}): SeizureEvent {
@@ -252,13 +233,13 @@ function seizure(overrides: SeizureOverrides = {}): SeizureEvent {
   return event;
 }
 
-function stool(overrides: StoolOverrides = {}): StoolEvent {
+function therapyDog(overrides: TherapyDogOverrides = {}): TherapyDogEvent {
   const { deleted, deletedTime, ...eventOverrides } = overrides;
   const event = {
-    ...stoolFixture,
-    id: 'stool-test',
-    quality: 'normal' as const,
-    stoolFlags: [],
+    ...therapyDogFixture,
+    id: 'therapy-dog-test',
+    intensity: 'medium' as const,
+    tags: [],
     ...eventOverrides
   };
 

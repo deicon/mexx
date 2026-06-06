@@ -1,5 +1,5 @@
 import { eachDayOfInterval, endOfMonth, format, parseISO, startOfMonth } from 'date-fns';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { calculateDayState, DayState, getEventCalendarDate } from './domain/dayState';
 import { AppState, EventType, ISODate } from './domain/types';
 import { trackerRepository } from './storage/repository';
@@ -7,7 +7,6 @@ import { CaptureScreens } from './ui/screens/CaptureScreens';
 import { DashboardScreen } from './ui/screens/DashboardScreen';
 import { ExportsScreen } from './ui/screens/ExportsScreen';
 import { KnownTermsScreen } from './ui/screens/KnownTermsScreen';
-import { MealTemplatesScreen } from './ui/screens/MealTemplatesScreen';
 import { PhasesScreen } from './ui/screens/PhasesScreen';
 import { ReportsScreen } from './ui/screens/ReportsScreen';
 
@@ -26,19 +25,14 @@ export function App() {
   const [captureRequest, setCaptureRequest] = useState<CaptureRequest | null>(null);
   const [eventToEdit, setEventToEdit] = useState<AppState['events'][number] | null>(null);
   const [maintenanceScreen, setMaintenanceScreen] = useState<
-    'phases' | 'knownTerms' | 'mealTemplates' | 'exports' | 'reports' | null
+    'phases' | 'knownTerms' | 'exports' | 'reports' | null
   >(null);
   const [dashboardFocusDate, setDashboardFocusDate] = useState<ISODate | null>(null);
   const today = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
+  const reloadTokenRef = useRef(0);
 
   useEffect(() => {
-    let active = true;
-
-    void reloadAppState(() => active);
-
-    return () => {
-      active = false;
-    };
+    void reloadAppState();
   }, []);
 
   if (loadState.status === 'loading') {
@@ -66,7 +60,7 @@ export function App() {
         eventToEdit={eventToEdit}
         onCancel={() => setEventToEdit(null)}
         onDone={async () => {
-          await reloadAppState(() => true);
+          await reloadAppState();
           setEventToEdit(null);
         }}
       />
@@ -82,7 +76,7 @@ export function App() {
         defaultDate={captureRequest.defaultDate}
         onCancel={() => setCaptureRequest(null)}
         onDone={async () => {
-          await reloadAppState(() => true);
+          await reloadAppState();
           setCaptureRequest(null);
         }}
       />
@@ -96,7 +90,7 @@ export function App() {
         repository={trackerRepository}
         onBack={() => setMaintenanceScreen(null)}
         onChanged={async () => {
-          await reloadAppState(() => true);
+          await reloadAppState();
         }}
       />
     );
@@ -109,20 +103,7 @@ export function App() {
         repository={trackerRepository}
         onBack={() => setMaintenanceScreen(null)}
         onChanged={async () => {
-          await reloadAppState(() => true);
-        }}
-      />
-    );
-  }
-
-  if (maintenanceScreen === 'mealTemplates') {
-    return (
-      <MealTemplatesScreen
-        mealTemplates={loadState.state.mealTemplates}
-        repository={trackerRepository}
-        onBack={() => setMaintenanceScreen(null)}
-        onChanged={async () => {
-          await reloadAppState(() => true);
+          await reloadAppState();
         }}
       />
     );
@@ -135,7 +116,7 @@ export function App() {
         repository={trackerRepository}
         onBack={() => setMaintenanceScreen(null)}
         onChanged={async () => {
-          const refreshed = await reloadAppState(() => true);
+          const refreshed = await reloadAppState();
           const focus = pickFocusDate(refreshed, today);
 
           if (focus) {
@@ -172,29 +153,34 @@ export function App() {
       onAction={(type, selectedDate) => setCaptureRequest({ type, defaultDate: selectedDate })}
       onEditEvent={setEventToEdit}
       onReload={async () => {
-        await reloadAppState(() => true);
+        await reloadAppState();
       }}
       onOpenPhases={() => setMaintenanceScreen('phases')}
       onOpenKnownTerms={() => setMaintenanceScreen('knownTerms')}
-      onOpenMealTemplates={() => setMaintenanceScreen('mealTemplates')}
       onOpenExports={() => setMaintenanceScreen('exports')}
       onOpenReports={() => setMaintenanceScreen('reports')}
     />
   );
 
-  async function reloadAppState(isActive: () => boolean): Promise<AppState | null> {
+  async function reloadAppState(): Promise<AppState | null> {
+    const token = ++reloadTokenRef.current;
+
     try {
       const state = await trackerRepository.loadAppState();
 
-      if (isActive()) {
-        setLoadState({ status: 'ready', state });
+      if (token !== reloadTokenRef.current) {
+        return null;
       }
+
+      setLoadState({ status: 'ready', state });
 
       return state;
     } catch (error: unknown) {
-      if (isActive()) {
-        setLoadState({ status: 'error', message: error instanceof Error ? error.message : 'App konnte nicht laden' });
+      if (token !== reloadTokenRef.current) {
+        return null;
       }
+
+      setLoadState({ status: 'error', message: error instanceof Error ? error.message : 'App konnte nicht laden' });
 
       return null;
     }

@@ -12,7 +12,6 @@ const repositoryMock = vi.hoisted(() => ({
   replaceAppState: vi.fn(),
   upsertEvent: vi.fn(),
   markEventDeleted: vi.fn(),
-  saveMealTemplate: vi.fn(),
   saveKnownTerm: vi.fn(),
   savePhase: vi.fn(),
   saveBackupStatus: vi.fn()
@@ -46,7 +45,7 @@ describe('App accessibility smoke', () => {
     await screen.findByRole('heading', { name: 'Mexx' });
     await user.click(screen.getByRole('button', { name: /Erfassen oeffnen/i }));
 
-    for (const label of ['Anfall', 'Mahlzeit', 'Kot', 'Gabe', 'Beobachtung']) {
+    for (const label of ['Anfall', 'Therapiehund', 'Beobachtung']) {
       expect(screen.getByRole('button', { name: label })).toBeInTheDocument();
     }
   });
@@ -76,9 +75,9 @@ describe('App accessibility smoke', () => {
     await screen.findByRole('heading', { name: 'Mexx' });
 
     await user.click(screen.getByRole('button', { name: /Erfassen oeffnen/i }));
-    await user.click(screen.getByRole('button', { name: 'Mahlzeit' }));
+    await user.click(screen.getByRole('button', { name: 'Therapiehund' }));
 
-    const heading = await screen.findByRole('heading', { name: 'Mahlzeit erfassen' });
+    const heading = await screen.findByRole('heading', { name: 'Therapiehund-Termin erfassen' });
     const form = heading.closest('main')!;
     const formScope = within(form);
     const controls = [
@@ -126,7 +125,6 @@ function emptyState(): AppState {
     ...appStateFixture,
     events: [],
     knownTerms: [],
-    mealTemplates: [],
     phases: [],
     settings: {
       trackedDogName: 'Mexx'

@@ -2,15 +2,12 @@ import {
   AppState,
   BackupExportPayload,
   DayExportPayload,
-  DoseEvent,
   KnownTerm,
-  MealEvent,
-  MealTemplate,
   ObservationEvent,
   Phase,
   SCHEMA_VERSION,
   SeizureEvent,
-  StoolEvent,
+  TherapyDogEvent,
   TrackerEvent
 } from './types';
 
@@ -32,68 +29,6 @@ export const seizureFixture: SeizureEvent = {
   note: 'Short seizure after morning activity.'
 };
 
-export const mealTemplateFixture: MealTemplate = {
-  id: 'meal-template-breakfast',
-  name: 'Breakfast',
-  foodComponents: [
-    {
-      name: 'Chicken',
-      consumedAmount: 120,
-      unit: 'g'
-    },
-    {
-      name: 'Broth',
-      consumedAmount: 30,
-      unit: 'ml'
-    }
-  ],
-  dosePresets: [
-    {
-      category: 'supplement',
-      name: 'Omega oil',
-      administeredAmount: 2,
-      unit: 'ml'
-    }
-  ]
-};
-
-export const mealFixture: MealEvent = {
-  id: 'event-meal-1',
-  type: 'meal',
-  eventTime: '2026-06-03T09:00:00.000Z',
-  captureTime: '2026-06-03T09:02:00.000Z',
-  changeTime: '2026-06-03T09:02:00.000Z',
-  foodComponents: mealTemplateFixture.foodComponents,
-  consumptionStatus: 'eaten',
-  mealTemplateId: mealTemplateFixture.id,
-  note: 'Ate normally.'
-};
-
-export const stoolFixture: StoolEvent = {
-  id: 'event-stool-1',
-  type: 'stool',
-  eventTime: '2026-06-03T10:15:00.000Z',
-  captureTime: '2026-06-03T10:17:00.000Z',
-  changeTime: '2026-06-03T10:17:00.000Z',
-  quality: 'normal',
-  stoolFlags: ['mucus'],
-  note: 'Small amount of mucus observed.'
-};
-
-export const doseFixture: DoseEvent = {
-  id: 'event-dose-1',
-  type: 'dose',
-  eventTime: '2026-06-03T09:05:00.000Z',
-  captureTime: '2026-06-03T09:06:00.000Z',
-  changeTime: '2026-06-03T09:06:00.000Z',
-  category: 'supplement',
-  name: 'Omega oil',
-  administeredAmount: 2,
-  unit: 'ml',
-  associatedMealId: mealFixture.id,
-  note: 'Given with breakfast.'
-};
-
 export const observationFixture: ObservationEvent = {
   id: 'event-observation-1',
   type: 'observation',
@@ -110,6 +45,18 @@ export const deletedObservationFixture: ObservationEvent = {
   changeTime: '2026-06-03T12:30:00.000Z',
   deleted: true,
   deletedTime: '2026-06-03T12:30:00.000Z'
+};
+
+export const therapyDogFixture: TherapyDogEvent = {
+  id: 'event-therapy-dog-1',
+  type: 'therapy_dog',
+  eventTime: '2026-06-03T14:00:00.000Z',
+  captureTime: '2026-06-03T14:05:00.000Z',
+  changeTime: '2026-06-03T14:05:00.000Z',
+  intensity: 'medium',
+  durationMinutes: 120,
+  tags: ['Krankenhaus', 'Station 3A'],
+  note: 'Vormittagstermin im Krankenhaus.'
 };
 
 export const phaseFixture: Phase = {
@@ -129,45 +76,35 @@ export const knownTermFixture: KnownTerm = {
 
 export const allEventVariantFixtures: TrackerEvent[] = [
   seizureFixture,
-  mealFixture,
-  stoolFixture,
-  doseFixture,
-  observationFixture
+  observationFixture,
+  therapyDogFixture
 ];
 
 export const appStateFixture: AppState = {
   schemaVersion: SCHEMA_VERSION,
   events: [...allEventVariantFixtures, deletedObservationFixture],
-  mealTemplates: [mealTemplateFixture],
   knownTerms: [
     knownTermFixture,
-    {
-      id: 'term-food-chicken',
-      kind: 'food-name',
-      value: 'Chicken',
-      lastUsedTime: mealFixture.eventTime,
-      useCount: 5
-    },
-    {
-      id: 'term-dose-omega-oil',
-      kind: 'dose-name',
-      value: 'Omega oil',
-      lastUsedTime: doseFixture.eventTime,
-      useCount: 4
-    },
-    {
-      id: 'term-stool-mucus',
-      kind: 'stool-flag',
-      value: 'mucus',
-      lastUsedTime: stoolFixture.eventTime,
-      useCount: 1
-    },
     {
       id: 'term-observation-restless',
       kind: 'observation-tag',
       value: 'restless',
       lastUsedTime: observationFixture.eventTime,
       useCount: 2
+    },
+    {
+      id: 'term-therapy-krankenhaus',
+      kind: 'therapy-tag',
+      value: 'Krankenhaus',
+      lastUsedTime: therapyDogFixture.eventTime,
+      useCount: 5
+    },
+    {
+      id: 'term-therapy-station-3a',
+      kind: 'therapy-tag',
+      value: 'Station 3A',
+      lastUsedTime: therapyDogFixture.eventTime,
+      useCount: 3
     }
   ],
   phases: [phaseFixture],
@@ -193,6 +130,6 @@ export const dayExportFixture: DayExportPayload = {
   date: '2026-06-03',
   events: allEventVariantFixtures,
   knownTerms: appStateFixture.knownTerms.filter((term) =>
-    ['trigger-tag', 'food-name', 'dose-name', 'stool-flag', 'observation-tag'].includes(term.kind)
+    ['trigger-tag', 'observation-tag', 'therapy-tag'].includes(term.kind)
   )
 };

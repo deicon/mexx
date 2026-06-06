@@ -23,9 +23,7 @@ describe('DashboardScreen', () => {
     await user.click(screen.getByRole('button', { name: /Erfassen oeffnen/i }));
 
     expect(screen.getByRole('button', { name: 'Anfall' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Mahlzeit' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Kot' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Gabe' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Therapiehund' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Beobachtung' })).toBeInTheDocument();
   });
 
@@ -185,7 +183,6 @@ const seizures = [
 const appState: AppState = {
   schemaVersion: SCHEMA_VERSION,
   events: seizures,
-  mealTemplates: [],
   knownTerms: [],
   phases: [],
   settings: { trackedDogName: 'Mexx' }

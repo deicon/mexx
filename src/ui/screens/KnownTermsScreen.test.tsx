@@ -40,11 +40,10 @@ function appStateWithMergeSuggestions(): AppState {
   return {
     ...appStateFixture,
     events: [],
-    mealTemplates: [],
     phases: [],
     knownTerms: [
-      { id: 'term-food-chicken', kind: 'food-name', value: 'Chicken', useCount: 2 },
-      { id: 'term-food-chiken', kind: 'food-name', value: 'Chiken', useCount: 1 },
+      { id: 'term-therapy-tagespflege', kind: 'therapy-tag', value: 'Tagespflege', useCount: 2 },
+      { id: 'term-therapy-tagespfleg', kind: 'therapy-tag', value: 'Tagespfleg', useCount: 1 },
       { id: 'term-trigger-stress', kind: 'trigger-tag', value: 'stress', useCount: 2 },
       { id: 'term-trigger-stres', kind: 'trigger-tag', value: 'stres', useCount: 1 }
     ]

@@ -14,14 +14,12 @@ type KnownTermsScreenProps = {
 };
 
 const kindLabels: Record<KnownTermKind, string> = {
-  'food-name': 'Futter',
-  'dose-name': 'Gaben',
   'trigger-tag': 'Ausloeser',
-  'stool-flag': 'Kotmerkmale',
-  'observation-tag': 'Beobachtungen'
+  'observation-tag': 'Beobachtungen',
+  'therapy-tag': 'Kategorien'
 };
 
-const kindOrder: KnownTermKind[] = ['food-name', 'dose-name', 'trigger-tag', 'stool-flag', 'observation-tag'];
+const kindOrder: KnownTermKind[] = ['trigger-tag', 'observation-tag', 'therapy-tag'];
 
 export function KnownTermsScreen({ appState, repository, onBack, onChanged }: KnownTermsScreenProps) {
   const [savingMerge, setSavingMerge] = useState(false);

@@ -3,12 +3,9 @@ import {
   appStateFixture,
   backupExportFixture,
   deletedObservationFixture,
-  doseFixture,
-  mealFixture,
-  mealTemplateFixture,
   observationFixture,
   seizureFixture,
-  stoolFixture
+  therapyDogFixture
 } from './fixtures';
 import {
   applyBackupImport,
@@ -71,7 +68,7 @@ describe('day export schema', () => {
     expect(() =>
       parseDayExport({
         ...dayExport,
-        events: [{ ...mealFixture, foodComponents: [] }]
+        events: [{ ...seizureFixture, severity: 'critical' }]
       })
     ).toThrow(/invalid day export/i);
   });
@@ -85,9 +82,9 @@ describe('day export schema', () => {
         events: [
           ...dayExport.events,
           {
-            ...mealFixture,
-            id: 'event-meal-wrong-day',
-            eventTime: '2026-06-04T09:00:00.000Z'
+            ...observationFixture,
+            id: 'event-observation-wrong-day',
+            eventTime: '2026-06-04T12:00:00.000Z'
           }
         ]
       })
@@ -134,7 +131,7 @@ describe('day export schema', () => {
     expect(() =>
       parseDayExport({
         ...dayExport,
-        events: [seizureFixture, { ...stoolFixture, id: seizureFixture.id }]
+        events: [seizureFixture, { ...therapyDogFixture, id: seizureFixture.id }]
       })
     ).toThrow(/duplicate event id/i);
   });
@@ -147,40 +144,30 @@ describe('day export schema', () => {
         ...dayExport,
         knownTerms: [
           term('term-duplicate', 'trigger-tag', 'stress'),
-          term('term-duplicate', 'food-name', 'Chicken')
+          term('term-duplicate', 'observation-tag', 'restless')
         ]
       })
     ).toThrow(/duplicate known-term id/i);
   });
 
-  it('excludes unrelated meal templates and unrelated known terms', () => {
+  it('excludes unrelated known terms', () => {
     const localState: AppState = {
       ...appStateFixture,
       events: [
         seizureFixture,
-        mealFixture,
-        stoolFixture,
-        doseFixture,
         observationFixture,
+        therapyDogFixture,
         {
-          ...mealFixture,
-          id: 'event-meal-other-day',
-          eventTime: '2026-06-04T09:00:00.000Z',
-          foodComponents: [{ name: 'Turkey', consumedAmount: 80, unit: 'g' }]
-        }
-      ],
-      mealTemplates: [
-        mealTemplateFixture,
-        {
-          id: 'meal-template-unrelated',
-          name: 'Unrelated',
-          foodComponents: [{ name: 'Turkey', consumedAmount: 80, unit: 'g' }]
+          ...observationFixture,
+          id: 'event-observation-other-day',
+          eventTime: '2026-06-04T12:00:00.000Z',
+          observationTags: ['tired']
         }
       ],
       knownTerms: [
         ...appStateFixture.knownTerms,
-        term('term-food-broth', 'food-name', 'Broth'),
-        term('term-food-turkey', 'food-name', 'Turkey'),
+        term('term-therapy-pflegeheim', 'therapy-tag', 'Pflegeheim'),
+        term('term-observation-tired', 'observation-tag', 'tired'),
         term('term-trigger-fireworks', 'trigger-tag', 'fireworks')
       ]
     };
@@ -190,17 +177,13 @@ describe('day export schema', () => {
     expect(dayExport).not.toHaveProperty('mealTemplates');
     expect(dayExport.events.map((event) => event.id)).toEqual([
       seizureFixture.id,
-      mealFixture.id,
-      stoolFixture.id,
-      doseFixture.id,
-      observationFixture.id
+      observationFixture.id,
+      therapyDogFixture.id
     ]);
     expect(dayExport.knownTerms.map((knownTerm) => knownTerm.id).sort()).toEqual([
-      'term-dose-omega-oil',
-      'term-food-broth',
-      'term-food-chicken',
       'term-observation-restless',
-      'term-stool-mucus',
+      'term-therapy-krankenhaus',
+      'term-therapy-station-3a',
       'term-trigger-stress'
     ]);
   });
@@ -231,38 +214,38 @@ describe('day import merge', () => {
       events: [seizureFixture]
     };
     const dayExport = createDayExport(
-      { ...appStateFixture, events: [stoolFixture], knownTerms: [] },
+      { ...appStateFixture, events: [therapyDogFixture], knownTerms: [] },
       '2026-06-03',
       '2026-06-03T18:05:00.000Z'
     );
 
     const merged = applyDayImport(localState, dayExport);
 
-    expect(merged.events.map((event) => event.id)).toEqual([seizureFixture.id, stoolFixture.id]);
+    expect(merged.events.map((event) => event.id)).toEqual([seizureFixture.id, therapyDogFixture.id]);
   });
 
   it('preserves local events that are not present in the day export', () => {
     const dayExport = createDayExport(
-      { ...appStateFixture, events: [stoolFixture], knownTerms: [] },
+      { ...appStateFixture, events: [therapyDogFixture], knownTerms: [] },
       '2026-06-03',
       '2026-06-03T18:05:00.000Z'
     );
 
-    const merged = applyDayImport({ ...appStateFixture, events: [mealFixture] }, dayExport);
+    const merged = applyDayImport({ ...appStateFixture, events: [observationFixture] }, dayExport);
 
-    expect(merged.events).toContainEqual(mealFixture);
+    expect(merged.events).toContainEqual(observationFixture);
   });
 
   it('keeps the imported version when it has the newer changeTime for the same event identity', () => {
     const localEvent: TrackerEvent = {
-      ...mealFixture,
+      ...observationFixture,
       note: 'Local old note.',
-      changeTime: '2026-06-03T09:10:00.000Z'
+      changeTime: '2026-06-03T12:10:00.000Z'
     };
     const importedEvent: TrackerEvent = {
-      ...mealFixture,
+      ...observationFixture,
       note: 'Imported new note.',
-      changeTime: '2026-06-03T09:11:00.000Z'
+      changeTime: '2026-06-03T12:11:00.000Z'
     };
     const dayExport = createDayExport(
       { ...appStateFixture, events: [importedEvent], knownTerms: [] },
@@ -278,14 +261,14 @@ describe('day import merge', () => {
 
   it('keeps the local version when an imported same-id event is older', () => {
     const localEvent: TrackerEvent = {
-      ...mealFixture,
+      ...observationFixture,
       note: 'Local new note.',
-      changeTime: '2026-06-03T09:12:00.000Z'
+      changeTime: '2026-06-03T12:12:00.000Z'
     };
     const importedEvent: TrackerEvent = {
-      ...mealFixture,
+      ...observationFixture,
       note: 'Imported old note.',
-      changeTime: '2026-06-03T09:11:00.000Z'
+      changeTime: '2026-06-03T12:11:00.000Z'
     };
     const dayExport = createDayExport(
       { ...appStateFixture, events: [importedEvent], knownTerms: [] },
@@ -301,14 +284,14 @@ describe('day import merge', () => {
 
   it('compares event changeTime by instant when offsets differ', () => {
     const localEvent: TrackerEvent = {
-      ...mealFixture,
+      ...observationFixture,
       note: 'Local later instant.',
-      changeTime: '2026-06-03T09:00:00Z'
+      changeTime: '2026-06-03T12:00:00Z'
     };
     const importedEvent: TrackerEvent = {
-      ...mealFixture,
+      ...observationFixture,
       note: 'Imported earlier instant.',
-      changeTime: '2026-06-03T10:30:00+02:00'
+      changeTime: '2026-06-03T13:30:00+02:00'
     };
     const dayExport = createDayExport(
       { ...appStateFixture, events: [importedEvent], knownTerms: [] },
@@ -324,10 +307,10 @@ describe('day import merge', () => {
 
   it('keeps similar events with different identities separate', () => {
     const similarImportedEvent: TrackerEvent = {
-      ...mealFixture,
-      id: 'event-meal-similar-imported',
-      captureTime: '2026-06-03T09:03:00.000Z',
-      changeTime: '2026-06-03T09:03:00.000Z'
+      ...observationFixture,
+      id: 'event-observation-similar-imported',
+      captureTime: '2026-06-03T12:03:00.000Z',
+      changeTime: '2026-06-03T12:03:00.000Z'
     };
     const dayExport = createDayExport(
       { ...appStateFixture, events: [similarImportedEvent], knownTerms: [] },
@@ -335,9 +318,9 @@ describe('day import merge', () => {
       '2026-06-03T18:05:00.000Z'
     );
 
-    const merged = applyDayImport({ ...appStateFixture, events: [mealFixture] }, dayExport);
+    const merged = applyDayImport({ ...appStateFixture, events: [observationFixture] }, dayExport);
 
-    expect(merged.events).toContainEqual(mealFixture);
+    expect(merged.events).toContainEqual(observationFixture);
     expect(merged.events).toContainEqual(similarImportedEvent);
   });
 

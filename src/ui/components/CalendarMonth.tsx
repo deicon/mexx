@@ -133,24 +133,12 @@ function emptyDayState(date: ISODate): DayState {
         unknown: 0
       }
     },
-    stoolSummary: {
-      total: 0,
-      byQuality: {
-        'firm-formed': 0,
-        normal: 0,
-        soft: 0,
-        mushy: 0,
-        diarrhea: 0
-      }
-    },
     eventCounts: {
       total: 0,
       byType: {
         seizure: 0,
-        meal: 0,
-        stool: 0,
-        dose: 0,
-        observation: 0
+        observation: 0,
+        therapy_dog: 0
       }
     }
   };

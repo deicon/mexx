@@ -4,7 +4,7 @@ import '@testing-library/jest-dom/vitest';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { appStateFixture, mealFixture, seizureFixture, stoolFixture } from '../../domain/fixtures';
+import { appStateFixture, observationFixture, seizureFixture, therapyDogFixture } from '../../domain/fixtures';
 import { createBackupExport, createDayExport } from '../../domain/importExport';
 import { createTrackerDatabase, TrackerDatabase } from '../../storage/db';
 import { createTrackerRepository, TrackerRepository } from '../../storage/repository';
@@ -91,7 +91,6 @@ describe('Backup import', () => {
     const initial: AppState = {
       schemaVersion: SCHEMA_VERSION,
       events: [{ ...seizureFixture, id: 'leftover-event' }],
-      mealTemplates: [],
       knownTerms: [],
       phases: [],
       settings: { trackedDogName: 'Mexx' }
@@ -158,7 +157,6 @@ describe('Backup import', () => {
     const freshState: AppState = {
       schemaVersion: SCHEMA_VERSION,
       events: [],
-      mealTemplates: [],
       knownTerms: [],
       phases: [],
       settings: { trackedDogName: 'Mexx' }
@@ -195,7 +193,7 @@ describe('Day export', () => {
       ...appStateFixture,
       events: [
         { ...seizureFixture, eventTime: '2026-06-03T08:00:00.000Z' },
-        { ...mealFixture, id: 'meal-other-day', eventTime: '2026-06-05T09:00:00.000Z' }
+        { ...observationFixture, id: 'observation-other-day', eventTime: '2026-06-05T12:00:00.000Z' }
       ]
     };
     await repository.replaceAppState(stateWithMultipleDays);
@@ -231,8 +229,8 @@ describe('Day import', () => {
             changeTime: '2026-06-03T09:00:00.000Z'
           },
           {
-            ...mealFixture,
-            id: 'new-meal-from-secondary',
+            ...therapyDogFixture,
+            id: 'event-therapy-new',
             eventTime: '2026-06-03T14:00:00.000Z',
             changeTime: '2026-06-03T14:01:00.000Z'
           }
@@ -255,17 +253,17 @@ describe('Day import', () => {
     await waitFor(() => expect(onChanged).toHaveBeenCalled());
 
     const reloaded = await repository.loadAppState();
-    const newMeal = reloaded.events.find((event) => event.id === 'new-meal-from-secondary');
+    const newTherapy = reloaded.events.find((event) => event.id === 'event-therapy-new');
     const updatedSeizure = reloaded.events.find((event) => event.id === seizureFixture.id);
 
-    expect(newMeal).toBeDefined();
+    expect(newTherapy).toBeDefined();
     expect(updatedSeizure).toMatchObject({ note: 'Updated note' });
     expect(screen.getByText(/Neu: 1/)).toBeInTheDocument();
     expect(screen.getByText(/Aktualisiert: 1/)).toBeInTheDocument();
   });
 
   it('keeps local events that are not present in the import', async () => {
-    const localOnly: TrackerEvent = { ...stoolFixture, id: 'local-only', eventTime: '2026-06-03T18:00:00.000Z' };
+    const localOnly: TrackerEvent = { ...observationFixture, id: 'local-only', eventTime: '2026-06-03T18:00:00.000Z' };
     const local: AppState = {
       ...appStateFixture,
       events: [seizureFixture, localOnly]
@@ -276,7 +274,7 @@ describe('Day import', () => {
         ...local,
         events: [
           {
-            ...mealFixture,
+            ...therapyDogFixture,
             id: 'added-from-other',
             eventTime: '2026-06-03T12:30:00.000Z',
             changeTime: '2026-06-03T12:30:00.000Z'
@@ -363,8 +361,8 @@ describe('Day import', () => {
 
   it('roundtrips: secondary device export → primary device import → both devices see all events', async () => {
     const secondaryEvent: TrackerEvent = {
-      ...mealFixture,
-      id: 'secondary-meal',
+      ...therapyDogFixture,
+      id: 'secondary-therapy',
       eventTime: '2026-06-04T07:30:00.000Z',
       captureTime: '2026-06-04T07:30:00.000Z',
       changeTime: '2026-06-04T07:30:00.000Z'

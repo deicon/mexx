@@ -1,6 +1,6 @@
 import { format, parseISO } from 'date-fns';
 import { getEventCalendarDate } from '../../domain/dayState';
-import { EventId, ISODate, SeizureDurationClass, SeizureSeverity, StoolQuality, TrackerEvent } from '../../domain/types';
+import { EventId, ISODate, SeizureDurationClass, SeizureSeverity, TherapyDogIntensity, TrackerEvent } from '../../domain/types';
 
 type DayEventListRepository = {
   markEventDeleted: (eventId: EventId, deletedTime: string) => Promise<void>;
@@ -77,10 +77,8 @@ function eventAccessibleName(event: TrackerEvent): string {
 function eventTypeLabel(event: TrackerEvent): string {
   const labels: Record<TrackerEvent['type'], string> = {
     seizure: 'Anfall',
-    meal: 'Mahlzeit',
-    stool: 'Kot',
-    dose: 'Gabe',
-    observation: 'Beobachtung'
+    observation: 'Beobachtung',
+    therapy_dog: 'Therapiehund'
   };
 
   return labels[event.type];
@@ -90,16 +88,10 @@ function eventSummary(event: TrackerEvent): string {
   switch (event.type) {
     case 'seizure':
       return `Schwere ${seizureSeverityLabel(event.severity)}, Dauer ${seizureDurationLabel(event.durationClass)}`;
-    case 'meal':
-      return event.foodComponents
-        .map((component) => `${component.name} ${component.consumedAmount}${component.unit}`)
-        .join(', ');
-    case 'stool':
-      return `Qualitaet ${stoolQualityLabel(event.quality)}${event.stoolFlags.length ? `, ${event.stoolFlags.join(', ')}` : ''}`;
-    case 'dose':
-      return `${event.name} ${event.administeredAmount}${event.unit}`;
     case 'observation':
       return event.observationTags.length ? event.observationTags.join(', ') : 'Ohne Schlagwort';
+    case 'therapy_dog':
+      return `Intensitaet ${therapyDogIntensityLabel(event.intensity)}${event.durationMinutes ? `, ${event.durationMinutes} Min.` : ''}${event.tags.length ? ` — ${event.tags.join(', ')}` : ''}`;
   }
 }
 
@@ -117,12 +109,6 @@ function seizureDurationLabel(durationClass: SeizureDurationClass): string {
   }[durationClass];
 }
 
-function stoolQualityLabel(quality: StoolQuality): string {
-  return {
-    'firm-formed': 'fest geformt',
-    normal: 'normal',
-    soft: 'weich',
-    mushy: 'breiig',
-    diarrhea: 'Durchfall'
-  }[quality];
+function therapyDogIntensityLabel(intensity: TherapyDogIntensity): string {
+  return { light: 'leicht', medium: 'mittel', heavy: 'schwer' }[intensity];
 }

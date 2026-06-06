@@ -3,7 +3,6 @@ import {
   AppSettings,
   BackupStatus,
   KnownTerm,
-  MealTemplate,
   Phase,
   TrackerEvent
 } from '../domain/types';
@@ -24,7 +23,6 @@ export type BackupMetadataRecord = {
 
 export class TrackerDatabase extends Dexie {
   events!: Table<OrderedRecord<TrackerEvent>, string>;
-  mealTemplates!: Table<OrderedRecord<MealTemplate>, string>;
   knownTerms!: Table<OrderedRecord<KnownTerm>, string>;
   phases!: Table<OrderedRecord<Phase>, string>;
   settings!: Table<SettingsRecord, string>;
@@ -35,7 +33,6 @@ export class TrackerDatabase extends Dexie {
 
     this.version(1).stores({
       events: 'id, type, eventTime, changeTime, deleted, storageOrder',
-      mealTemplates: 'id, name, storageOrder',
       knownTerms: 'id, kind, value, lastUsedTime, storageOrder',
       phases: 'id, startDate, endDate, storageOrder',
       settings: 'key',

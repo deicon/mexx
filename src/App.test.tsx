@@ -12,7 +12,6 @@ const repositoryMock = vi.hoisted(() => ({
   replaceAppState: vi.fn(),
   upsertEvent: vi.fn(),
   markEventDeleted: vi.fn(),
-  saveMealTemplate: vi.fn(),
   saveKnownTerm: vi.fn(),
   savePhase: vi.fn(),
   saveBackupStatus: vi.fn()
@@ -96,7 +95,6 @@ function emptyState(events: TrackerEvent[] = []): AppState {
     ...appStateFixture,
     events,
     knownTerms: [],
-    mealTemplates: [],
     phases: [],
     settings: {
       trackedDogName: 'Mexx'

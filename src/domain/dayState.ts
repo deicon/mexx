@@ -6,19 +6,12 @@ import {
   SeizureDurationClass,
   SeizureEvent,
   SeizureSeverity,
-  StoolQuality,
   TrackerEvent
 } from './types';
 
 export type SeizureCounts = Record<SeizureSeverity, number> & {
   total: number;
   byDurationClass: Record<SeizureDurationClass, number>;
-};
-
-export type StoolSummary = {
-  total: number;
-  byQuality: Record<StoolQuality, number>;
-  latestQuality?: StoolQuality;
 };
 
 export type EventCounts = {
@@ -30,7 +23,6 @@ export type DayState = {
   date: ISODate;
   colorScore: ColorScore;
   seizureCounts: SeizureCounts;
-  stoolSummary: StoolSummary;
   eventCounts: EventCounts;
 };
 
@@ -44,7 +36,6 @@ export function calculateDayState(events: TrackerEvent[], date?: ISODate): DaySt
     date: stateDate,
     colorScore: calculateColorScore(activeSeizures),
     seizureCounts: countSeizures(activeSeizures),
-    stoolSummary: summarizeStool(dayEvents),
     eventCounts: countEvents(dayEvents)
   };
 }
@@ -113,38 +104,11 @@ function countSeizures(seizures: SeizureEvent[]): SeizureCounts {
   return counts;
 }
 
-function summarizeStool(events: TrackerEvent[]): StoolSummary {
-  const stoolEvents = events.filter((event) => event.type === 'stool');
-  const byQuality: Record<StoolQuality, number> = {
-    'firm-formed': 0,
-    normal: 0,
-    soft: 0,
-    mushy: 0,
-    diarrhea: 0
-  };
-
-  for (const stoolEvent of stoolEvents) {
-    byQuality[stoolEvent.quality] += 1;
-  }
-
-  const latestStool = stoolEvents
-    .slice()
-    .sort((left, right) => right.eventTime.localeCompare(left.eventTime))[0];
-
-  return {
-    total: stoolEvents.length,
-    byQuality,
-    latestQuality: latestStool?.quality
-  };
-}
-
 function countEvents(events: TrackerEvent[]): EventCounts {
   const byType: Record<EventType, number> = {
     seizure: 0,
-    meal: 0,
-    stool: 0,
-    dose: 0,
-    observation: 0
+    observation: 0,
+    therapy_dog: 0
   };
 
   for (const event of events) {

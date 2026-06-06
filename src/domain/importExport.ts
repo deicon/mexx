@@ -35,33 +35,6 @@ const exactDurationSchema = z
   })
   .strict();
 
-const foodComponentSchema = z
-  .object({
-    name: z.string(),
-    consumedAmount: z.number(),
-    unit: z.enum(['g', 'ml', 'piece', 'tsp', 'tbsp'])
-  })
-  .strict();
-
-const dosePresetSchema = z
-  .object({
-    category: z.enum(['supplement', 'medication', 'other']),
-    name: z.string(),
-    administeredAmount: z.number(),
-    unit: z.enum(['g', 'mg', 'ml', 'drops', 'tablet', 'capsule', 'piece']),
-    note: z.string().optional()
-  })
-  .strict();
-
-const mealTemplateSchema = z
-  .object({
-    id: z.string(),
-    name: z.string(),
-    foodComponents: z.tuple([foodComponentSchema]).rest(foodComponentSchema),
-    dosePresets: z.array(dosePresetSchema).optional()
-  })
-  .strict();
-
 const seizureFields = {
   type: z.literal('seizure'),
   severity: z.enum(['light', 'medium', 'severe']),
@@ -71,34 +44,17 @@ const seizureFields = {
   note: z.string().optional()
 };
 
-const mealFields = {
-  type: z.literal('meal'),
-  foodComponents: z.tuple([foodComponentSchema]).rest(foodComponentSchema),
-  consumptionStatus: z.enum(['eaten', 'partially-eaten', 'refused', 'unknown']).optional(),
-  mealTemplateId: z.string().optional(),
-  note: z.string().optional()
-};
-
-const stoolFields = {
-  type: z.literal('stool'),
-  quality: z.enum(['firm-formed', 'normal', 'soft', 'mushy', 'diarrhea']),
-  stoolFlags: z.array(z.string()),
-  note: z.string().optional()
-};
-
-const doseFields = {
-  type: z.literal('dose'),
-  category: z.enum(['supplement', 'medication', 'other']),
-  name: z.string(),
-  administeredAmount: z.number(),
-  unit: z.enum(['g', 'mg', 'ml', 'drops', 'tablet', 'capsule', 'piece']),
-  associatedMealId: z.string().optional(),
-  note: z.string().optional()
-};
-
 const observationFields = {
   type: z.literal('observation'),
   observationTags: z.array(z.string()),
+  note: z.string().optional()
+};
+
+const therapyDogFields = {
+  type: z.literal('therapy_dog'),
+  intensity: z.enum(['light', 'medium', 'heavy']),
+  durationMinutes: z.number().optional(),
+  tags: z.array(z.string()),
   note: z.string().optional()
 };
 
@@ -125,20 +81,16 @@ function deletedEventSchema<TFields extends z.ZodRawShape>(fields: TFields) {
 const trackerEventSchema = z.union([
   activeEventSchema(seizureFields),
   deletedEventSchema(seizureFields),
-  activeEventSchema(mealFields),
-  deletedEventSchema(mealFields),
-  activeEventSchema(stoolFields),
-  deletedEventSchema(stoolFields),
-  activeEventSchema(doseFields),
-  deletedEventSchema(doseFields),
   activeEventSchema(observationFields),
-  deletedEventSchema(observationFields)
+  deletedEventSchema(observationFields),
+  activeEventSchema(therapyDogFields),
+  deletedEventSchema(therapyDogFields)
 ]);
 
 const knownTermSchema = z
   .object({
     id: z.string(),
-    kind: z.enum(['food-name', 'dose-name', 'trigger-tag', 'stool-flag', 'observation-tag']),
+    kind: z.enum(['trigger-tag', 'observation-tag', 'therapy-tag']),
     value: z.string(),
     lastUsedTime: isoDateTimeSchema.optional(),
     useCount: z.number().optional()
@@ -170,7 +122,6 @@ const appStateSchema: z.ZodType<AppState> = z
   .object({
     schemaVersion: z.literal(SCHEMA_VERSION),
     events: z.array(trackerEventSchema),
-    mealTemplates: z.array(mealTemplateSchema),
     knownTerms: z.array(knownTermSchema),
     phases: z.array(phaseSchema),
     settings: appSettingsSchema
@@ -178,7 +129,6 @@ const appStateSchema: z.ZodType<AppState> = z
   .strict()
   .superRefine((state, ctx) => {
     addDuplicateIdIssues(ctx, state.events, ['events'], 'event');
-    addDuplicateIdIssues(ctx, state.mealTemplates, ['mealTemplates'], 'meal template');
     addDuplicateIdIssues(ctx, state.knownTerms, ['knownTerms'], 'known-term');
     addDuplicateIdIssues(ctx, state.phases, ['phases'], 'phase');
   });
@@ -303,20 +253,12 @@ function selectKnownTermsUsedByEvents(knownTerms: KnownTerm[], events: TrackerEv
       event.triggerTags.forEach((value) => usedTerms.add(termKey('trigger-tag', value)));
     }
 
-    if (event.type === 'meal') {
-      event.foodComponents.forEach((food) => usedTerms.add(termKey('food-name', food.name)));
-    }
-
-    if (event.type === 'stool') {
-      event.stoolFlags.forEach((value) => usedTerms.add(termKey('stool-flag', value)));
-    }
-
-    if (event.type === 'dose') {
-      usedTerms.add(termKey('dose-name', event.name));
-    }
-
     if (event.type === 'observation') {
       event.observationTags.forEach((value) => usedTerms.add(termKey('observation-tag', value)));
+    }
+
+    if (event.type === 'therapy_dog') {
+      event.tags.forEach((value) => usedTerms.add(termKey('therapy-tag', value)));
     }
   }
 

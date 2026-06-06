@@ -25,7 +25,6 @@ type DashboardScreenProps = {
   onReload?: () => void | Promise<void>;
   onOpenPhases?: () => void;
   onOpenKnownTerms?: () => void;
-  onOpenMealTemplates?: () => void;
   onOpenExports?: () => void;
   onOpenReports?: () => void;
   onRefreshApp?: () => void | Promise<void>;
@@ -45,7 +44,6 @@ export function DashboardScreen({
   onReload,
   onOpenPhases,
   onOpenKnownTerms,
-  onOpenMealTemplates,
   onOpenExports,
   onOpenReports,
   onRefreshApp = defaultRefreshApp
@@ -131,8 +129,8 @@ export function DashboardScreen({
 
         <section className="today-summary" aria-label="Tagesuebersicht">
           <StatusMetric label="Anfaelle" value={selectedDayState.seizureCounts.total} />
+          <StatusMetric label="Therapie" value={selectedDayState.eventCounts.byType.therapy_dog} />
           <StatusMetric label="Eintraege" value={selectedDayState.eventCounts.total} />
-          <StatusMetric label="Kot" value={selectedDayState.stoolSummary.total} />
         </section>
 
         <p className="backup-hint">{backupStatusLabel ?? formatBackupStatus(backupStatus)}</p>
@@ -171,9 +169,6 @@ export function DashboardScreen({
             <p className="eyebrow app-menu__eyebrow">Pflege</p>
             <button className="app-menu__item" type="button" onClick={() => runMenuAction(onOpenPhases)}>
               Phasen
-            </button>
-            <button className="app-menu__item" type="button" onClick={() => runMenuAction(onOpenMealTemplates)}>
-              Futtervorlagen
             </button>
             <button className="app-menu__item" type="button" onClick={() => runMenuAction(onOpenKnownTerms)}>
               Begriffe

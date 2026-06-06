@@ -238,9 +238,7 @@ export function ReportsScreen({
 function ReportTotals({ report }: { report: ClinicalReport }) {
   const items: Array<[string, number]> = [
     ['Anfaelle', report.totals.seizures],
-    ['Mahlzeiten', report.totals.meals],
-    ['Kot', report.totals.stools],
-    ['Gaben', report.totals.doses],
+    ['Therapiehund', report.totals.therapyDogs],
     ['Beobachtungen', report.totals.observations]
   ];
 
@@ -268,19 +266,19 @@ function describeEventBrief(event: TrackerEvent): string {
   switch (event.type) {
     case 'seizure':
       return `Anfall (${seizureSeverityLabel(event.severity)})`;
-    case 'meal':
-      return `Mahlzeit (${event.foodComponents.map((component) => component.name).join(', ')})`;
-    case 'stool':
-      return `Kot (${event.quality})`;
-    case 'dose':
-      return `Gabe (${event.name})`;
     case 'observation':
       return `Beobachtung${event.observationTags.length ? ` (${event.observationTags.join(', ')})` : ''}`;
+    case 'therapy_dog':
+      return `Therapiehund (${therapyDogIntensityLabel(event.intensity)})${event.durationMinutes ? ` ${event.durationMinutes}min` : ''}`;
   }
 }
 
 function seizureSeverityLabel(severity: SeizureSeverity): string {
   return { light: 'leicht', medium: 'mittel', severe: 'schwer' }[severity];
+}
+
+function therapyDogIntensityLabel(intensity: 'light' | 'medium' | 'heavy'): string {
+  return { light: 'leicht', medium: 'mittel', heavy: 'schwer' }[intensity];
 }
 
 function defaultDownloadFile(filename: string, content: string, mimeType: string): void {

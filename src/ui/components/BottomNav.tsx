@@ -1,4 +1,4 @@
-import { Bone, FileText, Home, Pill, Plus, StickyNote, Utensils, Zap } from 'lucide-react';
+import { FileText, HeartHandshake, Home, Plus, StickyNote, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { EventType } from '../../domain/types';
 
@@ -17,9 +17,7 @@ type CaptureAction = {
 
 const captureActions: CaptureAction[] = [
   { type: 'seizure', label: 'Anfall', icon: Zap },
-  { type: 'meal', label: 'Mahlzeit', icon: Utensils },
-  { type: 'stool', label: 'Kot', icon: Bone },
-  { type: 'dose', label: 'Gabe', icon: Pill },
+  { type: 'therapy_dog', label: 'Therapiehund', icon: HeartHandshake },
   { type: 'observation', label: 'Beobachtung', icon: StickyNote }
 ];
 

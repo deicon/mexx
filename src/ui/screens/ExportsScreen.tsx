@@ -48,7 +48,6 @@ type DayImportSummary = {
 type BackupImportSummary = {
   events: number;
   phases: number;
-  mealTemplates: number;
 };
 
 export function ExportsScreen({
@@ -115,8 +114,7 @@ export function ExportsScreen({
       await onChanged();
       setBackupImportSummary({
         events: newState.events.filter((event) => event.deleted !== true).length,
-        phases: newState.phases.length,
-        mealTemplates: newState.mealTemplates.length
+        phases: newState.phases.length
       });
       setBackupPreview(null);
     } finally {
@@ -242,7 +240,7 @@ export function ExportsScreen({
         {backupImportSummary ? (
           <p className="import-success" role="status" aria-live="polite">
             Backup importiert: {backupImportSummary.events} Ereignisse,{' '}
-            {backupImportSummary.phases} Phasen, {backupImportSummary.mealTemplates} Futtervorlagen.
+            {backupImportSummary.phases} Phasen.
           </p>
         ) : null}
       </section>

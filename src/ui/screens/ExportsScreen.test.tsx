@@ -162,7 +162,6 @@ describe('ExportsScreen', () => {
     const localState: AppState = {
       schemaVersion: SCHEMA_VERSION,
       events: [seizureFixture],
-      mealTemplates: [],
       knownTerms: [],
       phases: [],
       settings: {

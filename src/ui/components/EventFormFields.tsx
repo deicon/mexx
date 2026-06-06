@@ -1,8 +1,4 @@
-import { FoodUnit, DoseUnit } from '../../domain/types';
 import { TermPills } from './TermPills';
-
-export const FOOD_UNITS: FoodUnit[] = ['g', 'ml', 'piece', 'tsp', 'tbsp'];
-export const DOSE_UNITS: DoseUnit[] = ['g', 'mg', 'ml', 'drops', 'tablet', 'capsule', 'piece'];
 
 type EventTimeFieldProps = {
   value: string;
@@ -43,53 +39,6 @@ export function NoteField({ value, onChange }: NoteFieldProps) {
       <span>Notiz</span>
       <textarea aria-label="Notiz" value={value} onChange={(event) => onChange(event.target.value)} rows={3} />
     </label>
-  );
-}
-
-type AmountUnitFieldsProps<TUnit extends string> = {
-  amountLabel: string;
-  amount: string;
-  onAmountChange: (value: string) => void;
-  unitLabel: string;
-  unit: TUnit;
-  units: TUnit[];
-  onUnitChange: (value: TUnit) => void;
-};
-
-export function AmountUnitFields<TUnit extends string>({
-  amountLabel,
-  amount,
-  onAmountChange,
-  unitLabel,
-  unit,
-  units,
-  onUnitChange
-}: AmountUnitFieldsProps<TUnit>) {
-  return (
-    <div className="inline-fields inline-fields--even">
-      <label>
-        <span>{amountLabel}</span>
-        <input
-          aria-label={amountLabel}
-          type="number"
-          inputMode="decimal"
-          min="0"
-          step="0.1"
-          value={amount}
-          onChange={(event) => onAmountChange(event.target.value)}
-        />
-      </label>
-      <label>
-        <span>{unitLabel}</span>
-        <select aria-label={unitLabel} value={unit} onChange={(event) => onUnitChange(event.target.value as TUnit)}>
-          {units.map((unitOption) => (
-            <option value={unitOption} key={unitOption}>
-              {unitOption}
-            </option>
-          ))}
-        </select>
-      </label>
-    </div>
   );
 }
 

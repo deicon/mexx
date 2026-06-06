@@ -4,8 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   appStateFixture,
   knownTermFixture,
-  mealFixture,
-  mealTemplateFixture,
+  observationFixture,
   phaseFixture,
   seizureFixture
 } from '../domain/fixtures';
@@ -30,7 +29,6 @@ describe('tracker repository', () => {
     const expectedState: AppState = {
       schemaVersion: SCHEMA_VERSION,
       events: [],
-      mealTemplates: [],
       knownTerms: [],
       phases: [],
       settings: {
@@ -53,7 +51,6 @@ describe('tracker repository', () => {
     const importedState: AppState = {
       ...appStateFixture,
       events: [seizureFixture],
-      mealTemplates: [],
       knownTerms: [],
       phases: [],
       settings: {
@@ -73,7 +70,7 @@ describe('tracker repository', () => {
       note: 'Updated note.',
       changeTime: '2026-06-03T08:10:00.000Z'
     });
-    await repository.upsertEvent(mealFixture);
+    await repository.upsertEvent(observationFixture);
 
     const state = await repository.loadAppState();
 
@@ -83,7 +80,7 @@ describe('tracker repository', () => {
         note: 'Updated note.',
         changeTime: '2026-06-03T08:10:00.000Z'
       },
-      mealFixture
+      observationFixture
     ]);
   });
 
@@ -101,14 +98,6 @@ describe('tracker repository', () => {
           deletedTime: '2026-06-03T08:20:00.000Z'
         }
       ]
-    });
-  });
-
-  it('persists meal templates', async () => {
-    await repository.saveMealTemplate(mealTemplateFixture);
-
-    await expect(repository.loadAppState()).resolves.toMatchObject({
-      mealTemplates: [mealTemplateFixture]
     });
   });
 

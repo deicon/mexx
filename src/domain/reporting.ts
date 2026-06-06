@@ -141,10 +141,8 @@ export type ClinicalReport = {
   dayStates: DayState[];
   totals: {
     seizures: number;
-    meals: number;
-    stools: number;
-    doses: number;
     observations: number;
+    therapyDogs: number;
   };
   correlations: SeizureCorrelation[];
   phases: Phase[];
@@ -171,10 +169,8 @@ export function buildClinicalReport(state: AppState, input: ClinicalReportInput)
     dayStates,
     totals: {
       seizures: totals.seizure,
-      meals: totals.meal,
-      stools: totals.stool,
-      doses: totals.dose,
-      observations: totals.observation
+      observations: totals.observation,
+      therapyDogs: totals.therapy_dog
     },
     correlations: calculateCorrelations(activeEvents, input.period),
     phases: state.phases.filter((phase) => phaseOverlapsPeriod(phase, input.period)),
@@ -185,10 +181,8 @@ export function buildClinicalReport(state: AppState, input: ClinicalReportInput)
 function countByType(events: TrackerEvent[]): Record<EventType, number> {
   const counts: Record<EventType, number> = {
     seizure: 0,
-    meal: 0,
-    stool: 0,
-    dose: 0,
-    observation: 0
+    observation: 0,
+    therapy_dog: 0
   };
 
   for (const event of events) {
@@ -281,43 +275,21 @@ function buildEventDetailsFile(events: TrackerEvent[]): CsvFile {
       }
     }
 
-    if (event.type === 'meal') {
-      for (const component of event.foodComponents) {
-        rows.push([
-          event.id,
-          'food-component',
-          component.name,
-          String(component.consumedAmount),
-          component.unit,
-          '',
-          event.consumptionStatus ?? ''
-        ]);
-      }
-    }
-
-    if (event.type === 'stool') {
-      rows.push([event.id, 'stool-quality', '', '', '', event.quality, '']);
-
-      for (const flag of event.stoolFlags) {
-        rows.push([event.id, 'stool-flag', '', '', '', flag, '']);
-      }
-    }
-
-    if (event.type === 'dose') {
-      rows.push([
-        event.id,
-        'dose-administration',
-        event.name,
-        String(event.administeredAmount),
-        event.unit,
-        event.category,
-        event.associatedMealId ?? ''
-      ]);
-    }
-
     if (event.type === 'observation') {
       for (const tag of event.observationTags) {
         rows.push([event.id, 'observation-tag', '', '', '', tag, '']);
+      }
+    }
+
+    if (event.type === 'therapy_dog') {
+      rows.push([event.id, 'therapy-dog-intensity', '', '', '', event.intensity, '']);
+
+      if (event.durationMinutes) {
+        rows.push([event.id, 'therapy-dog-duration', '', String(event.durationMinutes), 'minutes', '', '']);
+      }
+
+      for (const tag of event.tags) {
+        rows.push([event.id, 'therapy-tag', '', '', '', tag, '']);
       }
     }
   }
@@ -326,7 +298,7 @@ function buildEventDetailsFile(events: TrackerEvent[]): CsvFile {
 }
 
 function buildDayStatesFile(events: TrackerEvent[], period: PeriodRange): CsvFile {
-  const header = ['date', 'colorScore', 'seizures', 'meals', 'stools', 'doses', 'observations'];
+  const header = ['date', 'colorScore', 'seizures', 'observations', 'therapy_dogs'];
   const rows = eachDayInPeriod(period).map((date) => {
     const dayState = calculateDayState(events, date);
 
@@ -334,10 +306,8 @@ function buildDayStatesFile(events: TrackerEvent[], period: PeriodRange): CsvFil
       dayState.date,
       dayState.colorScore,
       String(dayState.seizureCounts.total),
-      String(dayState.eventCounts.byType.meal),
-      String(dayState.eventCounts.byType.stool),
-      String(dayState.eventCounts.byType.dose),
-      String(dayState.eventCounts.byType.observation)
+      String(dayState.eventCounts.byType.observation),
+      String(dayState.eventCounts.byType.therapy_dog)
     ];
   });
 

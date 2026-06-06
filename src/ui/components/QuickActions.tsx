@@ -1,17 +1,16 @@
-import { Bone, Pill, Utensils, Zap } from 'lucide-react';
+import { HeartHandshake, StickyNote, Zap } from 'lucide-react';
 import { EventType } from '../../domain/types';
 
 type QuickAction = {
-  type: Extract<EventType, 'seizure' | 'meal' | 'stool' | 'dose'>;
+  type: Extract<EventType, 'seizure' | 'observation' | 'therapy_dog'>;
   label: string;
   icon: typeof Zap;
 };
 
 const actions: QuickAction[] = [
   { type: 'seizure', label: 'Anfall', icon: Zap },
-  { type: 'meal', label: 'Mahlzeit', icon: Utensils },
-  { type: 'stool', label: 'Kot', icon: Bone },
-  { type: 'dose', label: 'Gabe', icon: Pill }
+  { type: 'therapy_dog', label: 'Therapiehund', icon: HeartHandshake },
+  { type: 'observation', label: 'Beobachtung', icon: StickyNote }
 ];
 
 type QuickActionsProps = {

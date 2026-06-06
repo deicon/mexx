@@ -1,33 +1,19 @@
-import { FormEvent, ReactNode, useMemo, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 import { learnKnownTerm } from '../../domain/knownTerms';
 import {
   AppState,
-  ConsumptionStatus,
-  DoseCategory,
-  DoseEvent,
-  DoseUnit,
   EventType,
-  FoodComponent,
-  FoodUnit,
   KnownTerm,
   KnownTermKind,
-  MealEvent,
   ObservationEvent,
   SeizureDurationClass,
   SeizureEvent,
   SeizureSeverity,
-  StoolEvent,
-  StoolQuality,
+  TherapyDogEvent,
+  TherapyDogIntensity,
   TrackerEvent
 } from '../../domain/types';
-import {
-  AmountUnitFields,
-  DOSE_UNITS,
-  EventTimeField,
-  FOOD_UNITS,
-  NoteField,
-  TermPills
-} from '../components/EventFormFields';
+import { EventTimeField, NoteField, TermPills } from '../components/EventFormFields';
 
 type CaptureRepository = {
   upsertEvent: (event: TrackerEvent) => Promise<void>;
@@ -48,18 +34,14 @@ type CaptureScreensProps = {
 
 const typeLabels: Record<EventType, string> = {
   seizure: 'Anfall erfassen',
-  meal: 'Mahlzeit erfassen',
-  stool: 'Kot erfassen',
-  dose: 'Gabe erfassen',
-  observation: 'Beobachtung erfassen'
+  observation: 'Beobachtung erfassen',
+  therapy_dog: 'Therapiehund-Termin erfassen'
 };
 
 const editTypeLabels: Record<EventType, string> = {
   seizure: 'Anfall bearbeiten',
-  meal: 'Mahlzeit bearbeiten',
-  stool: 'Kot bearbeiten',
-  dose: 'Gabe bearbeiten',
-  observation: 'Beobachtung bearbeiten'
+  observation: 'Beobachtung bearbeiten',
+  therapy_dog: 'Therapiehund-Termin bearbeiten'
 };
 
 export function CaptureScreens({
@@ -137,10 +119,8 @@ export function CaptureScreens({
       </section>
 
       {type === 'seizure' ? <SeizureForm {...common} /> : null}
-      {type === 'meal' ? <MealForm {...common} /> : null}
-      {type === 'stool' ? <StoolForm {...common} /> : null}
-      {type === 'dose' ? <DoseForm {...common} /> : null}
       {type === 'observation' ? <ObservationForm {...common} /> : null}
+      {type === 'therapy_dog' ? <TherapyDogForm {...common} /> : null}
     </main>
   );
 }
@@ -198,7 +178,9 @@ function SeizureForm({
       changeTime,
       severity,
       durationClass,
-      ...(exactDuration.trim() ? { exactDuration: { value: Number(exactDuration), unit: 'seconds' } } : {}),
+      ...(parseOptionalPositiveNumber(exactDuration)
+        ? { exactDuration: { value: parseOptionalPositiveNumber(exactDuration), unit: 'seconds' } }
+        : {}),
       triggerTags: triggers,
       ...optionalNote(note)
     };
@@ -239,287 +221,6 @@ function SeizureForm({
         onChange={setTriggers}
         inputLabel="Neuer Ausloeser"
       />
-      <NoteField value={note} onChange={onNoteChange} />
-      <FormActions saving={saving} />
-    </form>
-  );
-}
-
-function MealForm({
-  appState,
-  createId,
-  eventToEdit,
-  eventTime,
-  eventTimeError,
-  getEventTimeIso,
-  note,
-  now,
-  onEventTimeChange,
-  onNoteChange,
-  onSave,
-  saving
-}: FormProps) {
-  const editEvent = eventToEdit?.type === 'meal' ? eventToEdit : undefined;
-  const [templateId, setTemplateId] = useState(editEvent?.mealTemplateId ?? '');
-  const [components, setComponents] = useState<FoodComponentDraft[]>(
-    editEvent?.foodComponents.map((component) => ({ ...component, consumedAmount: String(component.consumedAmount) })) ?? [
-      { name: '', consumedAmount: '0', unit: 'g' }
-    ]
-  );
-  const [consumptionStatus, setConsumptionStatus] = useState<ConsumptionStatus>(editEvent?.consumptionStatus ?? 'eaten');
-
-  function applyTemplate(value: string) {
-    setTemplateId(value);
-    const template = appState.mealTemplates.find((candidate) => candidate.id === value);
-
-    if (template) {
-      setComponents(template.foodComponents.map((component) => ({ ...component, consumedAmount: String(component.consumedAmount) })));
-    }
-  }
-
-  function submit(event: FormEvent) {
-    event.preventDefault();
-    const parsedEventTime = getEventTimeIso();
-
-    if (!parsedEventTime) {
-      return;
-    }
-
-    const foodComponents = components
-      .map(toFoodComponent)
-      .filter((component): component is FoodComponent => component !== null);
-
-    if (foodComponents.length === 0) {
-      return;
-    }
-
-    const changeTime = now().toISOString();
-    const meal: MealEvent = {
-      id: editEvent?.id ?? createId(),
-      type: 'meal',
-      eventTime: parsedEventTime,
-      captureTime: editEvent?.captureTime ?? changeTime,
-      changeTime,
-      foodComponents: foodComponents as [FoodComponent, ...FoodComponent[]],
-      consumptionStatus,
-      ...(templateId ? { mealTemplateId: templateId } : {}),
-      ...optionalNote(note)
-    };
-
-    void onSave(meal, foodComponents.map((component) => ({ kind: 'food-name', value: component.name })));
-  }
-
-  return (
-    <form className="capture-form" onSubmit={submit}>
-      <EventTimeField value={eventTime} error={eventTimeError} onChange={onEventTimeChange} />
-      <SelectField label="Vorlage" value={templateId} onChange={applyTemplate}>
-        <option value="">Keine Vorlage</option>
-        {appState.mealTemplates.map((template) => (
-          <option value={template.id} key={template.id}>
-            {template.name}
-          </option>
-        ))}
-      </SelectField>
-      <SelectField
-        label="Fressstatus"
-        value={consumptionStatus}
-        onChange={(value) => setConsumptionStatus(value as ConsumptionStatus)}
-      >
-        <option value="eaten">gefressen</option>
-        <option value="partially-eaten">teilweise</option>
-        <option value="refused">verweigert</option>
-        <option value="unknown">unbekannt</option>
-      </SelectField>
-      <fieldset className="form-fieldset">
-        <legend>Futter</legend>
-        {components.map((component, index) => (
-          <div className="component-row" key={index}>
-            <label>
-              <span>Name</span>
-              <input
-                aria-label={`Futter ${index + 1} Name`}
-                value={component.name}
-                onChange={(event) => updateComponent(index, { name: event.target.value })}
-                list="food-known-terms"
-              />
-            </label>
-            <AmountUnitFields
-              amountLabel={`Futter ${index + 1} Menge`}
-              amount={component.consumedAmount}
-              onAmountChange={(value) => updateComponent(index, { consumedAmount: value })}
-              unitLabel={`Futter ${index + 1} Einheit`}
-              unit={component.unit}
-              units={FOOD_UNITS}
-              onUnitChange={(value) => updateComponent(index, { unit: value })}
-            />
-          </div>
-        ))}
-        <datalist id="food-known-terms">
-          {knownValues(appState, 'food-name').map((value) => (
-            <option value={value} key={value} />
-          ))}
-        </datalist>
-        <button className="secondary-button" type="button" onClick={() => setComponents([...components, { name: '', consumedAmount: '0', unit: 'g' }])}>
-          Futter hinzufuegen
-        </button>
-      </fieldset>
-      <NoteField value={note} onChange={onNoteChange} />
-      <FormActions saving={saving} />
-    </form>
-  );
-
-  function updateComponent(index: number, partial: Partial<FoodComponentDraft>) {
-    setComponents(components.map((component, componentIndex) => (componentIndex === index ? { ...component, ...partial } : component)));
-  }
-}
-
-function StoolForm({
-  appState,
-  createId,
-  eventToEdit,
-  eventTime,
-  eventTimeError,
-  getEventTimeIso,
-  note,
-  now,
-  onEventTimeChange,
-  onNoteChange,
-  onSave,
-  saving
-}: FormProps) {
-  const editEvent = eventToEdit?.type === 'stool' ? eventToEdit : undefined;
-  const [quality, setQuality] = useState<StoolQuality>(editEvent?.quality ?? 'normal');
-  const [flags, setFlags] = useState<string[]>(editEvent?.stoolFlags ?? []);
-
-  function submit(event: FormEvent) {
-    event.preventDefault();
-    const parsedEventTime = getEventTimeIso();
-
-    if (!parsedEventTime) {
-      return;
-    }
-
-    const changeTime = now().toISOString();
-    const stool: StoolEvent = {
-      id: editEvent?.id ?? createId(),
-      type: 'stool',
-      eventTime: parsedEventTime,
-      captureTime: editEvent?.captureTime ?? changeTime,
-      changeTime,
-      quality,
-      stoolFlags: flags,
-      ...optionalNote(note)
-    };
-
-    void onSave(stool, flags.map((value) => ({ kind: 'stool-flag', value })));
-  }
-
-  return (
-    <form className="capture-form" onSubmit={submit}>
-      <EventTimeField value={eventTime} error={eventTimeError} onChange={onEventTimeChange} />
-      <SelectField label="Kotqualitaet" value={quality} onChange={(value) => setQuality(value as StoolQuality)}>
-        <option value="firm-formed">fest geformt</option>
-        <option value="normal">normal</option>
-        <option value="soft">weich</option>
-        <option value="mushy">breiig</option>
-        <option value="diarrhea">Durchfall</option>
-      </SelectField>
-      <TermPills label="Kotmerkmale" terms={knownValues(appState, 'stool-flag')} selected={flags} onChange={setFlags} />
-      <NoteField value={note} onChange={onNoteChange} />
-      <FormActions saving={saving} />
-    </form>
-  );
-}
-
-function DoseForm({
-  appState,
-  createId,
-  eventToEdit,
-  eventTime,
-  eventTimeError,
-  getEventTimeIso,
-  note,
-  now,
-  onEventTimeChange,
-  onNoteChange,
-  onSave,
-  saving
-}: FormProps) {
-  const editEvent = eventToEdit?.type === 'dose' ? eventToEdit : undefined;
-  const [category, setCategory] = useState<DoseCategory>(editEvent?.category ?? 'supplement');
-  const [name, setName] = useState(editEvent?.name ?? '');
-  const [amount, setAmount] = useState(editEvent ? String(editEvent.administeredAmount) : '0');
-  const [unit, setUnit] = useState<DoseUnit>(editEvent?.unit ?? 'mg');
-  const [associatedMealId, setAssociatedMealId] = useState(editEvent?.associatedMealId ?? '');
-
-  function submit(event: FormEvent) {
-    event.preventDefault();
-    const parsedEventTime = getEventTimeIso();
-
-    if (!parsedEventTime) {
-      return;
-    }
-
-    const trimmedName = name.trim();
-
-    if (!trimmedName) {
-      return;
-    }
-
-    const changeTime = now().toISOString();
-    const dose: DoseEvent = {
-      id: editEvent?.id ?? createId(),
-      type: 'dose',
-      eventTime: parsedEventTime,
-      captureTime: editEvent?.captureTime ?? changeTime,
-      changeTime,
-      category,
-      name: trimmedName,
-      administeredAmount: Number(amount),
-      unit,
-      ...(associatedMealId ? { associatedMealId } : {}),
-      ...optionalNote(note)
-    };
-
-    void onSave(dose, [{ kind: 'dose-name', value: trimmedName }]);
-  }
-
-  return (
-    <form className="capture-form" onSubmit={submit}>
-      <EventTimeField value={eventTime} error={eventTimeError} onChange={onEventTimeChange} />
-      <SelectField label="Kategorie" value={category} onChange={(value) => setCategory(value as DoseCategory)}>
-        <option value="supplement">Supplement</option>
-        <option value="medication">Medikament</option>
-        <option value="other">Andere</option>
-      </SelectField>
-      <label className="form-field">
-        <span>Name</span>
-        <input aria-label="Name" value={name} onChange={(event) => setName(event.target.value)} list="dose-known-terms" />
-      </label>
-      <datalist id="dose-known-terms">
-        {knownValues(appState, 'dose-name').map((value) => (
-          <option value={value} key={value} />
-        ))}
-      </datalist>
-      <AmountUnitFields
-        amountLabel="Menge"
-        amount={amount}
-        onAmountChange={setAmount}
-        unitLabel="Einheit"
-        unit={unit}
-        units={DOSE_UNITS}
-        onUnitChange={setUnit}
-      />
-      <SelectField label="Zugehoerige Mahlzeit" value={associatedMealId} onChange={setAssociatedMealId}>
-        <option value="">Keine</option>
-        {appState.events
-          .filter((event): event is MealEvent => event.type === 'meal' && !event.deleted)
-          .map((meal) => (
-            <option value={meal.id} key={meal.id}>
-              {meal.foodComponents.map((component) => component.name).join(', ')}
-            </option>
-          ))}
-      </SelectField>
       <NoteField value={note} onChange={onNoteChange} />
       <FormActions saving={saving} />
     </form>
@@ -575,6 +276,83 @@ function ObservationForm({
   );
 }
 
+function TherapyDogForm({
+  appState,
+  createId,
+  eventToEdit,
+  eventTime,
+  eventTimeError,
+  getEventTimeIso,
+  note,
+  now,
+  onEventTimeChange,
+  onNoteChange,
+  onSave,
+  saving
+}: FormProps) {
+  const editEvent = eventToEdit?.type === 'therapy_dog' ? eventToEdit : undefined;
+  const [intensity, setIntensity] = useState<TherapyDogIntensity>(editEvent?.intensity ?? 'medium');
+  const [durationMinutes, setDurationMinutes] = useState(editEvent?.durationMinutes ? String(editEvent.durationMinutes) : '60');
+  const [tags, setTags] = useState<string[]>(editEvent?.tags ?? []);
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    const parsedEventTime = getEventTimeIso();
+
+    if (!parsedEventTime) {
+      return;
+    }
+
+    const changeTime = now().toISOString();
+    const therapyDog: TherapyDogEvent = {
+      id: editEvent?.id ?? createId(),
+      type: 'therapy_dog',
+      eventTime: parsedEventTime,
+      captureTime: editEvent?.captureTime ?? changeTime,
+      changeTime,
+      intensity,
+      ...(parseOptionalPositiveNumber(durationMinutes)
+        ? { durationMinutes: parseOptionalPositiveNumber(durationMinutes) }
+        : {}),
+      tags,
+      ...optionalNote(note)
+    };
+
+    void onSave(therapyDog, tags.map((value) => ({ kind: 'therapy-tag', value })));
+  }
+
+  return (
+    <form className="capture-form" onSubmit={submit}>
+      <EventTimeField value={eventTime} error={eventTimeError} onChange={onEventTimeChange} />
+      <SelectField label="Intensitaet" value={intensity} onChange={(value) => setIntensity(value as TherapyDogIntensity)}>
+        <option value="light">leicht</option>
+        <option value="medium">mittel</option>
+        <option value="heavy">schwer</option>
+      </SelectField>
+      <label className="form-field">
+        <span>Dauer in Minuten</span>
+        <input
+          aria-label="Dauer in Minuten"
+          type="number"
+          min="0"
+          inputMode="numeric"
+          value={durationMinutes}
+          onChange={(event) => setDurationMinutes(event.target.value)}
+        />
+      </label>
+      <TermPills
+        label="Kategorie"
+        terms={[...new Set([...knownValues(appState, 'therapy-tag'), 'Tagespflege', 'Station', 'Ausbildung'])]}
+        selected={tags}
+        onChange={setTags}
+        inputLabel="Neue Kategorie"
+      />
+      <NoteField value={note} onChange={onNoteChange} />
+      <FormActions saving={saving} />
+    </form>
+  );
+}
+
 function SelectField({
   label,
   value,
@@ -584,7 +362,7 @@ function SelectField({
   label: string;
   value: string;
   onChange: (value: string) => void;
-  children: ReactNode;
+  children: React.ReactNode;
 }) {
   return (
     <label className="form-field">
@@ -606,24 +384,6 @@ function FormActions({ saving }: { saving: boolean }) {
   );
 }
 
-type FoodComponentDraft = Omit<FoodComponent, 'consumedAmount'> & {
-  consumedAmount: string;
-};
-
-function toFoodComponent(component: FoodComponentDraft): FoodComponent | null {
-  const name = component.name.trim();
-
-  if (!name) {
-    return null;
-  }
-
-  return {
-    name,
-    consumedAmount: Number(component.consumedAmount),
-    unit: component.unit
-  };
-}
-
 function knownValues(appState: AppState, kind: KnownTermKind): string[] {
   return appState.knownTerms.filter((term) => term.kind === kind).map((term) => term.value);
 }
@@ -635,20 +395,23 @@ function optionalNote(note: string): { note?: string } {
 }
 
 function defaultEventTimeFor(defaultDate: string | undefined, now: () => Date): string {
+  const current = now();
+
   if (!defaultDate) {
-    return now().toISOString();
+    return current.toISOString();
   }
 
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(defaultDate);
 
   if (!match) {
-    return now().toISOString();
+    return current.toISOString();
   }
 
   const [, year, month, day] = match;
-  const noon = new Date(`${year}-${month}-${day}T12:00:00`);
+  const result = new Date(current);
+  result.setFullYear(Number(year), Number(month) - 1, Number(day));
 
-  return noon.toISOString();
+  return result.toISOString();
 }
 
 export function toDateTimeLocalValue(date: Date): string {
@@ -669,4 +432,18 @@ export function localDateTimeToIso(value: string): string | null {
   }
 
   return date.toISOString();
+}
+
+function parseOptionalPositiveNumber(value: string): number | null {
+  if (!value.trim()) {
+    return null;
+  }
+
+  const parsed = Number(value);
+
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return null;
+  }
+
+  return parsed;
 }
