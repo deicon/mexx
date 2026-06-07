@@ -17,8 +17,6 @@ type DashboardScreenProps = {
   repository: DashboardRepository;
   backupStatus?: BackupStatus;
   backupStatusLabel?: string;
-  initialMonth?: ISODate;
-  initialSelectedDate?: ISODate;
   onAction?: (type: EventType, selectedDate: ISODate) => void;
   onEditEvent?: (event: TrackerEvent) => void;
   onReload?: () => void | Promise<void>;
@@ -35,8 +33,6 @@ export function DashboardScreen({
   repository,
   backupStatus,
   backupStatusLabel,
-  initialMonth,
-  initialSelectedDate,
   onAction,
   onEditEvent,
   onReload,
@@ -46,20 +42,18 @@ export function DashboardScreen({
   onOpenReports,
   onRefreshApp = defaultRefreshApp
 }: DashboardScreenProps) {
-  const [monthDate, setMonthDate] = useState<ISODate>(
-    initialMonth ?? format(parseISO(today), 'yyyy-MM-01')
-  );
-  const [selectedDate, setSelectedDate] = useState<ISODate>(initialSelectedDate ?? today);
-  const lastInitialSelectedDate = useRef(initialSelectedDate);
+  const [monthDate, setMonthDate] = useState<ISODate>(format(parseISO(today), 'yyyy-MM-01'));
+  const [selectedDate, setSelectedDate] = useState<ISODate>(today);
   const [menuOpen, setMenuOpen] = useState(false);
+  const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (initialSelectedDate && initialSelectedDate !== lastInitialSelectedDate.current) {
-      lastInitialSelectedDate.current = initialSelectedDate;
-      setSelectedDate(initialSelectedDate);
-      setMonthDate(format(parseISO(initialSelectedDate), 'yyyy-MM-01'));
-    }
-  }, [initialSelectedDate]);
+    return () => {
+      if (resetTimerRef.current) {
+        clearTimeout(resetTimerRef.current);
+      }
+    };
+  }, []);
 
   const calendarDayStates = useMemo(() => {
     const monthStart = startOfMonth(parseISO(monthDate));
@@ -99,12 +93,38 @@ export function DashboardScreen({
   }
 
   function goToToday() {
+    if (resetTimerRef.current) {
+      clearTimeout(resetTimerRef.current);
+      resetTimerRef.current = null;
+    }
     setMonthDate(format(parseISO(today), 'yyyy-MM-01'));
     setSelectedDate(today);
   }
 
   function selectDay(date: ISODate) {
     setSelectedDate(date);
+    if (date !== today) {
+      if (resetTimerRef.current) {
+        clearTimeout(resetTimerRef.current);
+      }
+      resetTimerRef.current = setTimeout(() => {
+        goToToday();
+      }, 5 * 60 * 1000);
+    } else {
+      if (resetTimerRef.current) {
+        clearTimeout(resetTimerRef.current);
+        resetTimerRef.current = null;
+      }
+    }
+  }
+
+  function handleCapture(type: EventType) {
+    if (resetTimerRef.current) {
+      clearTimeout(resetTimerRef.current);
+      resetTimerRef.current = null;
+    }
+    onAction?.(type, selectedDate);
+    goToToday();
   }
 
   function runMenuAction(action?: () => void) {
@@ -203,7 +223,7 @@ export function DashboardScreen({
         active="dashboard"
         onDashboard={goToToday}
         onReports={() => onOpenReports?.()}
-        onCapture={(type) => onAction?.(type, selectedDate)}
+        onCapture={handleCapture}
       />
     </>
   );

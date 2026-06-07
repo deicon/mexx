@@ -1,6 +1,5 @@
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getEventCalendarDate } from './domain/dayState';
 import { AppState, EventType, ISODate } from './domain/types';
 import { trackerRepository } from './storage/repository';
 import { CaptureScreens } from './ui/screens/CaptureScreens';
@@ -27,7 +26,6 @@ export function App() {
   const [maintenanceScreen, setMaintenanceScreen] = useState<
     'phases' | 'knownTerms' | 'exports' | 'reports' | null
   >(null);
-  const [dashboardFocusDate, setDashboardFocusDate] = useState<ISODate | null>(null);
   const today = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
   const reloadTokenRef = useRef(0);
 
@@ -116,12 +114,7 @@ export function App() {
         repository={trackerRepository}
         onBack={() => setMaintenanceScreen(null)}
         onChanged={async () => {
-          const refreshed = await reloadAppState();
-          const focus = pickFocusDate(refreshed, today);
-
-          if (focus) {
-            setDashboardFocusDate(focus);
-          }
+          await reloadAppState();
         }}
       />
     );
@@ -147,9 +140,7 @@ export function App() {
       today={today}
       repository={trackerRepository}
       backupStatus={loadState.state.settings.backupStatus}
-      initialSelectedDate={dashboardFocusDate ?? undefined}
-      initialMonth={dashboardFocusDate ? format(parseISO(dashboardFocusDate), 'yyyy-MM-01') : undefined}
-      onAction={(type) => setCaptureRequest({ type, defaultDate: today })}
+      onAction={(type, selectedDate) => setCaptureRequest({ type, defaultDate: selectedDate })}
       onEditEvent={setEventToEdit}
       onReload={async () => {
         await reloadAppState();
@@ -186,18 +177,4 @@ export function App() {
   }
 }
 
-function pickFocusDate(state: AppState | null, today: ISODate): ISODate | null {
-  if (!state) {
-    return null;
-  }
 
-  const activeEventDates = state.events
-    .filter((event) => event.deleted !== true)
-    .map((event) => getEventCalendarDate(event.eventTime));
-
-  if (activeEventDates.includes(today)) {
-    return today;
-  }
-
-  return activeEventDates.sort().pop() ?? null;
-}
