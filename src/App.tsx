@@ -150,7 +150,7 @@ export function App() {
       backupStatus={loadState.state.settings.backupStatus}
       initialSelectedDate={dashboardFocusDate ?? undefined}
       initialMonth={dashboardFocusDate ? format(parseISO(dashboardFocusDate), 'yyyy-MM-01') : undefined}
-      onAction={(type, selectedDate) => setCaptureRequest({ type, defaultDate: selectedDate })}
+      onAction={(type) => setCaptureRequest({ type, defaultDate: today })}
       onEditEvent={setEventToEdit}
       onReload={async () => {
         await reloadAppState();
