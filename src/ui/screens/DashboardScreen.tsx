@@ -1,6 +1,6 @@
-import { addMonths, format, parseISO } from 'date-fns';
+import { addMonths, eachDayOfInterval, endOfMonth, format, parseISO, startOfMonth } from 'date-fns';
 import { Menu } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { calculateDayState, DayState } from '../../domain/dayState';
 import { AppState, BackupStatus, EventType, ISODate, TrackerEvent } from '../../domain/types';
 import { BottomNav } from '../components/BottomNav';
@@ -13,7 +13,6 @@ type DashboardRepository = {
 
 type DashboardScreenProps = {
   appState: AppState;
-  dayStates: Record<ISODate, DayState>;
   today: ISODate;
   repository: DashboardRepository;
   backupStatus?: BackupStatus;
@@ -32,7 +31,6 @@ type DashboardScreenProps = {
 
 export function DashboardScreen({
   appState,
-  dayStates,
   today,
   repository,
   backupStatus,
@@ -62,7 +60,21 @@ export function DashboardScreen({
       setMonthDate(format(parseISO(initialSelectedDate), 'yyyy-MM-01'));
     }
   }, [initialSelectedDate]);
-  const selectedDayState = dayStates[selectedDate] ?? calculateDayState(appState.events, selectedDate);
+
+  const calendarDayStates = useMemo(() => {
+    const monthStart = startOfMonth(parseISO(monthDate));
+    const monthEnd = endOfMonth(monthStart);
+
+    return Object.fromEntries(
+      eachDayOfInterval({ start: monthStart, end: monthEnd }).map((day) => {
+        const date = format(day, 'yyyy-MM-dd');
+
+        return [date, calculateDayState(appState.events, date)];
+      })
+    );
+  }, [monthDate, appState.events]);
+
+  const selectedDayState = calendarDayStates[selectedDate] ?? calculateDayState(appState.events, selectedDate);
   const isToday = selectedDate === today;
   const dateLabel = isToday ? 'Heute' : formatWeekdayLongDate(parseISO(selectedDate));
 
@@ -137,7 +149,7 @@ export function DashboardScreen({
 
         <CalendarMonth
           monthDate={monthDate}
-          dayStates={dayStates}
+          dayStates={calendarDayStates}
           today={today}
           selectedDate={selectedDate}
           onSelectDay={selectDay}

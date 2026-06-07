@@ -154,7 +154,6 @@ function renderDashboard(overrides: Partial<Parameters<typeof DashboardScreen>[0
   return render(
     <DashboardScreen
       appState={appState}
-      dayStates={dayStates}
       today="2026-06-03"
       repository={repository}
       backupStatusLabel="Backup offen"

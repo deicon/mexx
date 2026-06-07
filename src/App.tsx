@@ -1,6 +1,6 @@
-import { eachDayOfInterval, endOfMonth, format, parseISO, startOfMonth } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { calculateDayState, DayState, getEventCalendarDate } from './domain/dayState';
+import { getEventCalendarDate } from './domain/dayState';
 import { AppState, EventType, ISODate } from './domain/types';
 import { trackerRepository } from './storage/repository';
 import { CaptureScreens } from './ui/screens/CaptureScreens';
@@ -144,7 +144,6 @@ export function App() {
   return (
     <DashboardScreen
       appState={loadState.state}
-      dayStates={calculateVisibleDayStates(loadState.state, today, dashboardFocusDate)}
       today={today}
       repository={trackerRepository}
       backupStatus={loadState.state.settings.backupStatus}
@@ -185,24 +184,6 @@ export function App() {
       return null;
     }
   }
-}
-
-function calculateVisibleDayStates(
-  state: AppState,
-  today: ISODate,
-  focusDate: ISODate | null
-): Record<ISODate, DayState> {
-  const referenceDate = focusDate ?? today;
-  const monthStart = startOfMonth(parseISO(referenceDate));
-  const monthEnd = endOfMonth(monthStart);
-
-  return Object.fromEntries(
-    eachDayOfInterval({ start: monthStart, end: monthEnd }).map((day) => {
-      const date = format(day, 'yyyy-MM-dd');
-
-      return [date, calculateDayState(state.events, date)];
-    })
-  );
 }
 
 function pickFocusDate(state: AppState | null, today: ISODate): ISODate | null {
