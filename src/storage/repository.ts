@@ -28,6 +28,9 @@ export type TrackerRepository = {
   saveKnownTerm: (knownTerm: KnownTerm) => Promise<void>;
   savePhase: (phase: Phase) => Promise<void>;
   saveBackupStatus: (backupStatus: BackupStatus) => Promise<void>;
+  checkNeedsMigration: () => Promise<boolean>;
+  exportRawState: () => Promise<unknown>;
+  runMigration: () => Promise<AppState>;
 };
 
 export const createTrackerRepository = (db: TrackerDatabase): TrackerRepository => ({
@@ -122,6 +125,51 @@ export const createTrackerRepository = (db: TrackerDatabase): TrackerRepository 
       key: BACKUP_STATUS_KEY,
       value: backupStatus
     });
+  },
+
+  async checkNeedsMigration() {
+    const [events, knownTerms] = await Promise.all([
+      db.events.toArray(),
+      db.knownTerms.toArray()
+    ]);
+    const validEventTypes = new Set(['seizure', 'observation', 'therapy_dog']);
+    const validTermKinds = new Set(['trigger-tag', 'observation-tag', 'therapy-tag']);
+    return (
+      events.some((e) => !validEventTypes.has((e as unknown as Record<string, string>).type)) ||
+      knownTerms.some((t) => !validTermKinds.has((t as unknown as Record<string, string>).kind))
+    );
+  },
+
+  async exportRawState() {
+    const [events, knownTerms, phases, settingsRecord, backupMetadataRecord] = await Promise.all([
+      db.events.toArray(),
+      db.knownTerms.toArray(),
+      db.phases.toArray(),
+      db.settings.get(APP_SETTINGS_KEY),
+      db.backupMetadata.get(BACKUP_STATUS_KEY)
+    ]);
+    return {
+      exportType: 'raw-migration-backup',
+      exportedAt: new Date().toISOString(),
+      events: events.map(({ storageOrder: _so, ...e }) => e),
+      knownTerms: knownTerms.map(({ storageOrder: _so, ...t }) => t),
+      phases: phases.map(({ storageOrder: _so, ...p }) => p),
+      settings: settingsRecord?.value ?? null,
+      backupStatus: backupMetadataRecord?.value ?? null
+    };
+  },
+
+  async runMigration() {
+    const state = await this.loadAppState();
+    const validEventTypes = new Set<string>(['seizure', 'observation', 'therapy_dog']);
+    const validTermKinds = new Set<string>(['trigger-tag', 'observation-tag', 'therapy-tag']);
+    const migrated: AppState = {
+      ...state,
+      events: state.events.filter((e) => validEventTypes.has((e as unknown as Record<string, string>).type)),
+      knownTerms: state.knownTerms.filter((t) => validTermKinds.has((t as unknown as Record<string, string>).kind))
+    };
+    await this.replaceAppState(migrated);
+    return migrated;
   }
 });
 

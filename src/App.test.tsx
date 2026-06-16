@@ -14,7 +14,10 @@ const repositoryMock = vi.hoisted(() => ({
   markEventDeleted: vi.fn(),
   saveKnownTerm: vi.fn(),
   savePhase: vi.fn(),
-  saveBackupStatus: vi.fn()
+  saveBackupStatus: vi.fn(),
+  checkNeedsMigration: vi.fn(),
+  exportRawState: vi.fn(),
+  runMigration: vi.fn()
 }));
 
 vi.mock('./storage/repository', () => ({
@@ -27,8 +30,10 @@ beforeEach(() => {
   repositoryMock.loadAppState.mockReset();
   repositoryMock.upsertEvent.mockReset();
   repositoryMock.saveKnownTerm.mockReset();
+  repositoryMock.checkNeedsMigration.mockReset();
   repositoryMock.upsertEvent.mockResolvedValue(undefined);
   repositoryMock.saveKnownTerm.mockResolvedValue(undefined);
+  repositoryMock.checkNeedsMigration.mockResolvedValue(false);
 });
 
 afterEach(() => {

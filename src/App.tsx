@@ -6,11 +6,13 @@ import { CaptureScreens } from './ui/screens/CaptureScreens';
 import { DashboardScreen } from './ui/screens/DashboardScreen';
 import { ExportsScreen } from './ui/screens/ExportsScreen';
 import { KnownTermsScreen } from './ui/screens/KnownTermsScreen';
+import { MigrationScreen } from './ui/screens/MigrationScreen';
 import { PhasesScreen } from './ui/screens/PhasesScreen';
 import { ReportsScreen } from './ui/screens/ReportsScreen';
 
 type LoadState =
   | { status: 'loading' }
+  | { status: 'needs-migration' }
   | { status: 'ready'; state: AppState }
   | { status: 'error'; message: string };
 
@@ -38,6 +40,15 @@ export function App() {
       <main className="app-shell app-shell--centered">
         <p className="loading-text">Mexx Tracker laedt...</p>
       </main>
+    );
+  }
+
+  if (loadState.status === 'needs-migration') {
+    return (
+      <MigrationScreen
+        repository={trackerRepository}
+        onDone={() => void reloadAppState()}
+      />
     );
   }
 
@@ -156,6 +167,17 @@ export function App() {
     const token = ++reloadTokenRef.current;
 
     try {
+      const needsMigration = await trackerRepository.checkNeedsMigration();
+
+      if (token !== reloadTokenRef.current) {
+        return null;
+      }
+
+      if (needsMigration) {
+        setLoadState({ status: 'needs-migration' });
+        return null;
+      }
+
       const state = await trackerRepository.loadAppState();
 
       if (token !== reloadTokenRef.current) {

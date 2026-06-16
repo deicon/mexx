@@ -14,7 +14,10 @@ const repositoryMock = vi.hoisted(() => ({
   markEventDeleted: vi.fn(),
   saveKnownTerm: vi.fn(),
   savePhase: vi.fn(),
-  saveBackupStatus: vi.fn()
+  saveBackupStatus: vi.fn(),
+  checkNeedsMigration: vi.fn(),
+  exportRawState: vi.fn(),
+  runMigration: vi.fn()
 }));
 
 vi.mock('./storage/repository', () => ({
