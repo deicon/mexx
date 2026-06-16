@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { appStateFixture, backupExportFixture, dayExportFixture, seizureFixture } from '../../domain/fixtures';
 import { createBackupExport, createDayExport } from '../../domain/importExport';
 import { AppState, BackupStatus, SCHEMA_VERSION } from '../../domain/types';
-import { ExportsScreen } from './ExportsScreen';
+import { ExportsScreen, defaultDownloadFile, downloadBlob } from './ExportsScreen';
 
 afterEach(() => {
   cleanup();
@@ -246,5 +246,57 @@ describe('createBackupExport (used by ExportsScreen)', () => {
 
     expect(backup.schemaVersion).toBe(SCHEMA_VERSION);
     expect(backup.exportType).toBe('backup');
+  });
+});
+
+describe('defaultDownloadFile (iOS Web Share + fallback)', () => {
+  it('calls navigator.share when canShare returns true', async () => {
+    const shareFn = vi.fn().mockResolvedValue(undefined);
+    const canShareFn = vi.fn().mockReturnValue(true);
+
+    Object.defineProperty(window.navigator, 'canShare', { value: canShareFn, configurable: true });
+    Object.defineProperty(window.navigator, 'share', { value: shareFn, configurable: true });
+
+    await defaultDownloadFile('test.json', '{}', 'application/json');
+
+    expect(canShareFn).toHaveBeenCalledWith(expect.objectContaining({ files: expect.any(Array) }));
+    expect(shareFn).toHaveBeenCalled();
+  });
+
+  it('[iOS PWA fix] throws error when canShare fails and clipboard unavailable', async () => {
+    const canShareFn = vi.fn().mockReturnValue(false);
+    Object.defineProperty(window.navigator, 'canShare', { value: canShareFn, configurable: true });
+    Object.defineProperty(window.navigator, 'standalone', { value: true, configurable: true });
+    delete (window.navigator as any).clipboard;
+
+    await expect(defaultDownloadFile('test.json', '{}', 'application/json')).rejects.toThrow();
+  });
+
+  it('[iOS PWA fix] copies to clipboard when canShare fails on iOS PWA', async () => {
+    const canShareFn = vi.fn().mockReturnValue(false);
+    const writeTextFn = vi.fn().mockResolvedValue(undefined);
+
+    Object.defineProperty(window.navigator, 'canShare', { value: canShareFn, configurable: true });
+    Object.defineProperty(window.navigator, 'standalone', { value: true, configurable: true });
+    Object.defineProperty(window.navigator, 'clipboard',
+      { value: { writeText: writeTextFn }, configurable: true });
+
+    await expect(
+      defaultDownloadFile('test.json', '{}', 'application/json')
+    ).rejects.toThrow(/Zwischenablage kopiert/);
+
+    expect(writeTextFn).toHaveBeenCalledWith('{}');
+  });
+
+  it('falls back to downloadBlob on non-iOS when canShare fails', async () => {
+    const canShareFn = vi.fn().mockReturnValue(false);
+    const linkClickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click');
+
+    Object.defineProperty(window.navigator, 'canShare', { value: canShareFn, configurable: true });
+    delete (window.navigator as any).standalone;
+
+    await defaultDownloadFile('test.json', '{}', 'application/json');
+
+    expect(linkClickSpy).toHaveBeenCalled();
   });
 });

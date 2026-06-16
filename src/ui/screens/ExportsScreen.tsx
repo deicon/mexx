@@ -27,7 +27,7 @@ type ExportsScreenProps = {
   onBack: () => void;
   onChanged: () => void | Promise<void>;
   now?: () => Date;
-  downloadFile?: (filename: string, content: string, mimeType: string) => void;
+  downloadFile?: (filename: string, content: string, mimeType: string) => void | Promise<void>;
 };
 
 type BackupPreview = {
@@ -62,6 +62,8 @@ export function ExportsScreen({
   const [dayPreview, setDayPreview] = useState<DayPreview | null>(null);
   const [backupError, setBackupError] = useState<string>('');
   const [dayError, setDayError] = useState<string>('');
+  const [backupExportError, setBackupExportError] = useState<string>('');
+  const [dayExportError, setDayExportError] = useState<string>('');
   const [dayImportSummary, setDayImportSummary] = useState<DayImportSummary | null>(null);
   const [backupImportSummary, setBackupImportSummary] = useState<BackupImportSummary | null>(null);
   const [dayExportDate, setDayExportDate] = useState<ISODate>('');
@@ -69,13 +71,16 @@ export function ExportsScreen({
 
   async function handleBackupExport() {
     setWorking(true);
+    setBackupExportError('');
     try {
       const exportedAt = now().toISOString();
       const backup = createBackupExport(appState, exportedAt);
       const filename = `mexx-backup-${exportedAt.slice(0, 19).replace(/[:.]/g, '-')}.json`;
-      downloadFile(filename, JSON.stringify(backup, null, 2), 'application/json');
+      await Promise.resolve(downloadFile(filename, JSON.stringify(backup, null, 2), 'application/json'));
       await repository.saveBackupStatus({ lastBackupTime: exportedAt });
       await onChanged();
+    } catch (error) {
+      setBackupExportError(error instanceof Error ? error.message : 'Backup konnte nicht exportiert werden.');
     } finally {
       setWorking(false);
     }
@@ -128,11 +133,14 @@ export function ExportsScreen({
     }
 
     setWorking(true);
+    setDayExportError('');
     try {
       const exportedAt = now().toISOString();
       const payload = createDayExport(appState, dayExportDate, exportedAt);
       const filename = `mexx-day-${dayExportDate}.json`;
-      downloadFile(filename, JSON.stringify(payload, null, 2), 'application/json');
+      await Promise.resolve(downloadFile(filename, JSON.stringify(payload, null, 2), 'application/json'));
+    } catch (error) {
+      setDayExportError(error instanceof Error ? error.message : 'Tagesexport konnte nicht exportiert werden.');
     } finally {
       setWorking(false);
     }
@@ -201,6 +209,11 @@ export function ExportsScreen({
         <button className="primary-button" type="button" onClick={() => void handleBackupExport()} disabled={working}>
           Backup teilen
         </button>
+        {backupExportError ? (
+          <p role="alert" className="field-error">
+            {backupExportError}
+          </p>
+        ) : null}
       </section>
 
       <section className="report-section" aria-labelledby="backup-import-title">
@@ -264,6 +277,11 @@ export function ExportsScreen({
         >
           Tag teilen
         </button>
+        {dayExportError ? (
+          <p role="alert" className="field-error">
+            {dayExportError}
+          </p>
+        ) : null}
       </section>
 
       <section className="report-section" aria-labelledby="day-import-title">
@@ -378,7 +396,7 @@ function formatDateTime(isoTime: string): string {
   }).format(new Date(isoTime));
 }
 
-function defaultDownloadFile(filename: string, content: string, mimeType: string): void {
+export async function defaultDownloadFile(filename: string, content: string, mimeType: string): Promise<void> {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return;
   }
@@ -390,15 +408,56 @@ function defaultDownloadFile(filename: string, content: string, mimeType: string
     share?: (data?: ShareData) => Promise<void>;
   };
 
+  const isIosPWA = typeof (navigator as any).standalone === 'boolean' && (navigator as any).standalone === true;
+
   if (shareNavigator.canShare?.(shareData) && shareNavigator.share) {
-    shareNavigator.share(shareData).catch(() => downloadBlob(file, filename));
-    return;
+    try {
+      await shareNavigator.share(shareData);
+      return;
+    } catch (error) {
+      if ((error as any)?.name === 'AbortError') {
+        return;
+      }
+      if (isIosPWA) {
+        return copyToClipboard(content, filename);
+      }
+      downloadBlob(file, filename);
+    }
+  }
+
+  if (isIosPWA) {
+    return copyToClipboard(content, filename);
   }
 
   downloadBlob(file, filename);
 }
 
-function downloadBlob(file: Blob, filename: string): void {
+async function copyToClipboard(content: string, filename: string): Promise<void> {
+  if (!navigator.clipboard?.writeText) {
+    throw new Error(
+      'Backup-Teilen ist auf diesem Gerät nicht verfügbar. ' +
+      'Bitte verwenden Sie ein aktuelles iOS (13.2+) oder versuchen Sie einen anderen Browser.'
+    );
+  }
+
+  try {
+    await navigator.clipboard.writeText(content);
+    throw new Error(
+      `Backup wurde in die Zwischenablage kopiert (${filename}). ` +
+      'Öffnen Sie eine andere App und fügen Sie es ein, um es zu speichern (z.B. Mail, Notes, Files).'
+    );
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Zwischenablage kopiert')) {
+      throw error;
+    }
+    throw new Error(
+      'Backup konnte nicht in die Zwischenablage kopiert werden. ' +
+      'Bitte versuchen Sie es später.'
+    );
+  }
+}
+
+export function downloadBlob(file: Blob, filename: string): void {
   const url = URL.createObjectURL(file);
   const link = document.createElement('a');
 
